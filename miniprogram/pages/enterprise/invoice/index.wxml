@@ -1,0 +1,45 @@
+<!-- pages/enterprise/invoice/index.wxml —— 增值税/开票筹划 -->
+<view class="page">
+  <view class="card">
+    <view class="card-title">🧾 小规模纳税人增值税</view>
+    <view class="form-row">
+      <view class="form-label">月销售额（元）</view>
+      <input class="form-input" type="digit" value="{{monthlySales}}" bindinput="onInput" />
+    </view>
+    <view class="hint">月销售额 ≤ 10万（季 ≤ 30万）免征增值税</view>
+    <view class="btn-primary calc-btn" bindtap="onCalc">测算</view>
+  </view>
+
+  <block wx:if="{{result}}">
+    <view class="card">
+      <view class="card-title">📊 测算结果</view>
+      <view class="result-row">
+        <text>是否免征</text>
+        <text class="{{result.exempt?'success-color':'warn-color'}}">
+          {{result.exempt ? '✅ 免征' : '❌ 需缴纳'}}
+        </text>
+      </view>
+      <view wx:if="{{!result.exempt}}">
+        <view class="result-row">
+          <text>应缴增值税</text>
+          <text class="num-big">{{result.vat}} 元</text>
+        </view>
+        <view class="result-row">
+          <text>附加税费（六税两费减半）</text>
+          <text>{{result.surcharge}} 元</text>
+        </view>
+      </view>
+      <view class="note">{{result.note}}</view>
+    </view>
+  </block>
+
+  <!-- 六税两费减半说明 -->
+  <view class="card">
+    <view class="card-title">📌 六税两费减半</view>
+    <view class="note">
+      增值税小规模纳税人、小型微利企业、个体工商户可减半征收：资源税、城建税、房产税、城镇土地使用税、印花税、耕地占用税及教育费附加、地方教育附加。
+    </view>
+  </view>
+
+  <view class="disclaimer">开票节奏筹划需结合季度额度，避免集中开票超限</view>
+</view>

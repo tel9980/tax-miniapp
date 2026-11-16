@@ -1,0 +1,9 @@
+/* 政策库页面 */
+.page { padding-bottom: 60rpx; }
+.filter { display: flex; padding: 20rpx 24rpx; gap: 16rpx; }
+.f-tag { padding: 10rpx 30rpx; border-radius: 40rpx; background: #eef2f7; color: #5a6472; font-size: 26rpx; }
+.f-tag.active { background: #1a3d5c; color: #fff; }
+.p-head { display: flex; align-items: center; margin-bottom: 16rpx; }
+.p-title { font-size: 30rpx; font-weight: 600; color: #1a3d5c; }
+.p-body { font-size: 26rpx; color: #5a6472; line-height: 1.7; }
+.disclaimer { text-align: center; color: #a0a8b5; font-size: 22rpx; margin-top: 30rpx; }

@@ -1,0 +1,44 @@
+<!-- pages/personal/annual/index.wxml —— 年终奖优化 -->
+<view class="page">
+  <view class="card">
+    <view class="card-title">🎁 年终奖计税优化</view>
+    <view class="form-row">
+      <view class="form-label">全年一次性奖金（元）</view>
+      <input class="form-input" type="digit" data-field="bonus"
+        value="{{bonus}}" bindinput="onInput" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">年综合所得应纳税所得额（元）</view>
+      <input class="form-input" type="digit" data-field="annualTaxable"
+        value="{{annualTaxable}}" bindinput="onInput" />
+    </view>
+    <view class="hint">应纳税所得额 = 年收入 − 6万 − 三险一金 − 专项附加</view>
+    <view class="btn-primary calc-btn" bindtap="onCalc">对比测算</view>
+  </view>
+
+  <block wx:if="{{result}}">
+    <view class="card">
+      <view class="card-title">📊 两种方式对比</view>
+      <view class="result-row">
+        <text>方式A：单独计税</text>
+        <text>{{result.solo.tax}} 元</text>
+      </view>
+      <view class="result-row">
+        <text>方式B：并入综合所得</text>
+        <text>{{result.merged.tax}} 元</text>
+      </view>
+      <view class="divider"></view>
+      <view class="result-row">
+        <text>✅ 更优方式</text>
+        <text class="success-color num-mid">{{result.betterMode}}</text>
+      </view>
+      <view class="result-row">
+        <text>可节省</text>
+        <text class="num-big">{{result.saving}} 元</text>
+      </view>
+      <view wx:if="{{result.tip}}" class="tip">{{result.tip}}</view>
+    </view>
+  </block>
+
+  <view class="disclaimer">政策存在阶段性调整，请以最新官方口径为准</view>
+</view>

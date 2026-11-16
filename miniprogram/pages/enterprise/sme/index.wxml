@@ -1,0 +1,61 @@
+<!-- pages/enterprise/sme/index.wxml —— 小微优惠测算 -->
+<view class="page">
+  <view class="card">
+    <view class="card-title">🏢 小型微利企业优惠测算</view>
+    <view class="form-row">
+      <view class="form-label">年应纳税所得额（万元）</view>
+      <input class="form-input" type="digit" data-field="annualProfit"
+        value="{{form.annualProfit}}" bindinput="onInput" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">月销售额（元）</view>
+      <input class="form-input" type="digit" data-field="monthlySales"
+        value="{{form.monthlySales}}" bindinput="onInput" />
+    </view>
+    <view class="btn-primary calc-btn" bindtap="onCalc">测算</view>
+  </view>
+
+  <block wx:if="{{result}}">
+    <!-- 企业所得税 -->
+    <view class="card">
+      <view class="card-title">📊 企业所得税</view>
+      <view class="result-row">
+        <text>应纳税所得额</text>
+        <text>{{result.income.taxable}} 元</text>
+      </view>
+      <view class="result-row">
+        <text>应缴所得税</text>
+        <text class="{{result.income.eligible?'num-big success-color':'num-big danger-color'}}">
+          {{result.income.tax}} 元
+        </text>
+      </view>
+      <view class="result-row">
+        <text>实际税负率</text>
+        <text>{{result.income.effectiveRate}}%</text>
+      </view>
+      <view wx:if="{{!result.income.eligible}}" class="tip danger">{{result.income.note}}</view>
+    </view>
+
+    <!-- 增值税 -->
+    <view class="card">
+      <view class="card-title">🧾 增值税</view>
+      <view class="result-row">
+        <text>月销售额</text>
+        <text>{{result.vat.monthlySales}} 元</text>
+      </view>
+      <view class="result-row">
+        <text>增值税</text>
+        <text class="{{result.vat.exempt?'success-color':'warn-color'}}">
+          {{result.vat.vat}} 元
+        </text>
+      </view>
+      <view wx:if="{{!result.vat.exempt}}" class="result-row">
+        <text>附加税费（减半）</text>
+        <text>{{result.vat.surcharge}} 元</text>
+      </view>
+      <view class="note">{{result.vat.note}}</view>
+    </view>
+  </block>
+
+  <view class="disclaimer">小微认定需同时满足：从业人数≤300、资产≤5000万、非限制行业</view>
+</view>

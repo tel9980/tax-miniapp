@@ -1,0 +1,77 @@
+<!-- pages/personal/income/index.wxml —— 个税计算 -->
+<view class="page">
+  <view class="card">
+    <view class="card-title">工资薪金个税测算</view>
+
+    <view class="form-row">
+      <view class="form-label">月税前工资（元）</view>
+      <input class="form-input" type="digit" data-field="monthlyIncome"
+        value="{{form.monthlyIncome}}" bindinput="onInput" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">月三险一金（元）</view>
+      <input class="form-input" type="digit" data-field="socialSecurity"
+        value="{{form.socialSecurity}}" bindinput="onInput" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">月专项附加扣除（元）</view>
+      <input class="form-input" type="digit" data-field="monthlyDeduction"
+        value="{{form.monthlyDeduction}}" bindinput="onInput" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">全年一次性奖金（元）</view>
+      <input class="form-input" type="digit" data-field="annualBonus"
+        value="{{form.annualBonus}}" bindinput="onInput" />
+    </view>
+
+    <view class="btn-primary calc-btn" bindtap="onCalc">计算</view>
+  </view>
+
+  <block wx:if="{{result}}">
+    <!-- 结果卡片 -->
+    <view class="card">
+      <view class="card-title">📊 测算结果</view>
+      <view class="result-row">
+        <text>月应税额</text>
+        <text class="num-mid">{{result.monthly.taxable}} 元</text>
+      </view>
+      <view class="result-row">
+        <text>月缴纳个税</text>
+        <text class="num-big">{{result.monthly.tax}} 元</text>
+      </view>
+      <view class="result-row">
+        <text>月实发到手</text>
+        <text class="success-color">{{result.monthly.net}} 元</text>
+      </view>
+      <view class="divider"></view>
+      <view class="result-row">
+        <text>全年综合所得个税</text>
+        <text>{{result.annual.tax}} 元</text>
+      </view>
+      <view wx:if="{{result.bonus}}" class="result-row">
+        <text>全年含年终奖总税负</text>
+        <text class="warn-color">{{result.totalYearTax}} 元</text>
+      </view>
+      <view wx:if="{{result.tier}}" class="tier-note">
+        适用综合所得税率：{{result.tier.level}}级 {{result.tier.rate*100}}%
+      </view>
+    </view>
+
+    <!-- 年终奖优化提示 -->
+    <view wx:if="{{result.bonus}}" class="card">
+      <view class="card-title">🎁 年终奖计税建议</view>
+      <view class="result-row">
+        <text>更优方式</text>
+        <text class="success-color">{{result.bonus.betterMode}}</text>
+      </view>
+      <view class="result-row">
+        <text>可节省</text>
+        <text class="num-mid">{{result.bonus.saving}} 元</text>
+      </view>
+      <view wx:if="{{result.bonus.tip}}" class="tip">{{result.bonus.tip}}</view>
+      <view class="link" bindtap="goAnnual">去年终奖专属测算 ›</view>
+    </view>
+  </block>
+
+  <view class="disclaimer">结果仅供参考，实际以税务机关核定为准</view>
+</view>

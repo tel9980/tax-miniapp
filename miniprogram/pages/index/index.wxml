@@ -1,0 +1,82 @@
+<!-- pages/index/index.wxml —— 首页 -->
+<view class="page">
+  <!-- 顶部横幅 -->
+  <view class="hero">
+    <view class="hero-title">税收优惠助手</view>
+    <view class="hero-sub">个人 · 小微 一体化税务筹划</view>
+    <view class="hero-tag {{userType==='personal'?'active':''}}" data-type="personal" bindtap="switchUser">个人</view>
+    <view class="hero-tag {{userType==='enterprise'?'active':''}}" data-type="enterprise" bindtap="switchUser">企业</view>
+    <view class="hero-tag {{userType==='mixed'?'active':''}}" data-type="mixed" bindtap="switchUser">综合</view>
+  </view>
+
+  <!-- 个人区 -->
+  <block wx:if="{{userType==='personal'||userType==='mixed'}}">
+    <view class="section-title">👤 个人税务</view>
+    <view class="card menu-card" data-type="income" bindtap="goPersonal">
+      <view class="menu-icon">💰</view>
+      <view class="menu-info">
+        <view class="menu-name">个税计算器</view>
+        <view class="menu-desc">工资薪金月度/年度税额、到手测算</view>
+      </view>
+      <view class="menu-arrow">›</view>
+    </view>
+    <view class="card menu-card" data-type="annual" bindtap="goPersonal">
+      <view class="menu-icon">🎁</view>
+      <view class="menu-info">
+        <view class="menu-name">年终奖优化</view>
+        <view class="menu-desc">单独计税 vs 并入综合所得，自动选最优</view>
+      </view>
+      <view class="menu-arrow">›</view>
+    </view>
+    <view class="card menu-card" data-type="deduction" bindtap="goPersonal">
+      <view class="menu-icon">📋</view>
+      <view class="menu-info">
+        <view class="menu-name">专项附加扣除</view>
+        <view class="menu-desc">7项扣除测算，汇算退税预估</view>
+      </view>
+      <view class="menu-arrow">›</view>
+    </view>
+  </block>
+
+  <!-- 企业区 -->
+  <block wx:if="{{userType==='enterprise'||userType==='mixed'}}">
+    <view class="section-title">🏢 小微/个体户税务</view>
+    <view class="card menu-card" data-type="sme" bindtap="goEnterprise">
+      <view class="menu-icon">📈</view>
+      <view class="menu-info">
+        <view class="menu-name">小微优惠测算</view>
+        <view class="menu-desc">企业所得税5%实际税负 · 增值税免税</view>
+      </view>
+      <view class="menu-arrow">›</view>
+    </view>
+    <view class="card menu-card" data-type="invoice" bindtap="goEnterprise">
+      <view class="menu-icon">🧾</view>
+      <view class="menu-info">
+        <view class="menu-name">增值税/开票筹划</view>
+        <view class="menu-desc">免税额度测算 · 六税两费减半</view>
+      </view>
+      <view class="menu-arrow">›</view>
+    </view>
+  </block>
+
+  <!-- 快捷计算 -->
+  <view class="card quick-calc" bindtap="goCalc">
+    <view class="quick-icon">🧮</view>
+    <view class="quick-info">
+      <view class="quick-name">快捷计算器</view>
+      <view class="quick-desc">常用税率一键查询</view>
+    </view>
+    <view class="btn-primary btn-small">去计算</view>
+  </view>
+
+  <!-- 最近计算 -->
+  <block wx:if="{{history.length}}">
+    <view class="section-title">🕘 最近计算</view>
+    <view class="card history-card" wx:for="{{history}}" wx:key="*this">
+      <view>{{item.name}}</view>
+      <view class="success-color num-mid">{{item.result}}</view>
+    </view>
+  </block>
+
+  <view class="disclaimer">本工具结果仅供参考，实际以税务机关核定为准</view>
+</view>
