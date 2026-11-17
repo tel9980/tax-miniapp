@@ -205,6 +205,21 @@
     .tag.st-warn { background: #fff7ed; color: #c2410c; border: 1px solid #fdba74; }
     .item.warn { border-left: 3px solid #f59e0b; background: #fffbeb; }
     .wait-pill { display: inline-block; margin-top: 6px; padding: 3px 10px; border-radius: 999px; background: #fff7ed; color: #c2410c; border: 1px solid #fdba74; font-weight: 600; font-size: 12px; }
+
+    /* 加载更多 / 回到顶部 */
+    .load-more { text-align: center; padding: 14px 0 8px; }
+    .load-more button {
+      padding: 9px 24px; border-radius: 20px; border: 1px solid var(--border);
+      background: var(--card); color: var(--primary); font-size: 13.5px; font-weight: 500; cursor: pointer;
+    }
+    .load-more button:active { transform: scale(.97); }
+    .back-top {
+      position: fixed; right: 18px; bottom: 22px; width: 44px; height: 44px;
+      border-radius: 50%; border: none; background: var(--primary); color: #fff;
+      font-size: 19px; line-height: 1; cursor: pointer; box-shadow: 0 4px 14px rgba(47,111,237,.35);
+      opacity: 0; pointer-events: none; transform: translateY(8px); transition: opacity .2s, transform .2s;
+    }
+    .back-top.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
   </style>
 </head>
 <body>
@@ -266,6 +281,8 @@
     「优惠」标签为系统关键词判定，请以<a href="https://fgk.chinatax.gov.cn/" target="_blank" rel="noopener">官方原文</a>为准。<br>
     本平台仅供政策浏览与知识普及，不构成税务建议。
   </div>
+
+  <button id="backTop" class="back-top" title="回到顶部" aria-label="回到顶部">↑</button>
 
   <script src="app.js"></script>
 </body>

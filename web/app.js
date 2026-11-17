@@ -13,7 +13,19 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 let policies = [];
-const state = { q: '', tax: '全部', type: '全部', region: '全部', area: '全部', status: '全部', prefOnly: true };
+const PAGE_SIZE = 40;                 // 首屏/每批渲染条数，避免 300+ 条一次性渲染卡顿
+const FILTER_KEYS = ['tax', 'type', 'region', 'area', 'status', 'prefOnly'];
+const state = (() => {
+  const s = { q: '', tax: '全部', type: '全部', region: '全部', area: '全部', status: '全部', prefOnly: true, shown: PAGE_SIZE };
+  try { // 记住上次筛选，二次访问无需重新点
+    const saved = JSON.parse(localStorage.getItem('tax-filter') || '{}');
+    FILTER_KEYS.forEach((k) => { if (k in saved) s[k] = saved[k]; });
+  } catch (e) {}
+  return s;
+})();
+function saveFilter() {
+  try { const o = {}; FILTER_KEYS.forEach((k) => (o[k] = state[k])); localStorage.setItem('tax-filter', JSON.stringify(o)); } catch (e) {}
+}
 
 // ===== 加载 =====
 async function load() {
@@ -32,6 +44,7 @@ async function load() {
   buildStatusChips();
   buildTypeChips();
   buildTaxChips();
+  $('prefToggle').classList.toggle('on', state.prefOnly);
   render();
 }
 
@@ -52,7 +65,7 @@ function buildRegionChips() {
   holder.innerHTML = '';
   ['全部', ...regions].forEach((r) => {
     const c = document.createElement('div');
-    c.className = 'chip' + (r === '全部' ? ' active' : '');
+    c.className = 'chip' + (r === state.region ? ' active' : '');
     c.textContent = r;
     c.addEventListener('click', () => {
       state.region = r;
@@ -72,7 +85,7 @@ function buildAreaChips() {
   holder.innerHTML = '';
   ['全部', ...areas].forEach((a) => {
     const c = document.createElement('div');
-    c.className = 'chip' + (a === '全部' ? ' active' : '');
+    c.className = 'chip' + (a === state.area ? ' active' : '');
     c.textContent = a;
     c.addEventListener('click', () => {
       state.area = a;
@@ -89,7 +102,7 @@ function buildStatusChips() {
   holder.innerHTML = '';
   opts.forEach((s) => {
     const c = document.createElement('div');
-    c.className = 'chip' + (s === '全部' ? ' active' : '');
+    c.className = 'chip' + (s === state.status ? ' active' : '');
     c.textContent = s;
     c.addEventListener('click', () => {
       state.status = s;
@@ -110,7 +123,7 @@ function buildTypeChips() {
   holder.appendChild(toggle);
   ['全部', ...types].forEach((t) => {
     const c = document.createElement('div');
-    c.className = 'chip' + (t === '全部' ? ' active' : '');
+    c.className = 'chip' + (t === state.type ? ' active' : '');
     c.textContent = t;
     c.addEventListener('click', () => {
       state.type = t;
@@ -128,7 +141,7 @@ function buildTaxChips() {
   holder.innerHTML = '';
   ['全部', ...taxes].forEach((t) => {
     const c = document.createElement('div');
-    c.className = 'chip' + (t === '全部' ? ' active' : '');
+    c.className = 'chip' + (t === state.tax ? ' active' : '');
     c.textContent = t;
     c.addEventListener('click', () => {
       state.tax = t;
@@ -140,7 +153,8 @@ function buildTaxChips() {
 }
 
 // ===== 渲染 =====
-function render() {
+function render(resetShown = true) {
+  if (resetShown) { state.shown = PAGE_SIZE; saveFilter(); }
   const q = state.q.trim().toLowerCase();
   const filtered = policies.filter((p) => {
     if (state.prefOnly && !p.isPreference) return false;
@@ -149,7 +163,7 @@ function render() {
     if (state.status !== '全部' && p.status !== state.status) return false;
     if (state.tax !== '全部' && !(p.taxTypes || []).includes(state.tax)) return false;
     if (state.type !== '全部' && p.prefType !== state.type) return false;
-    if (q && !`${p.title} ${p.docNo}`.toLowerCase().includes(q)) return false;
+    if (q && !`${p.title} ${p.docNo} ${p.plain || ''}`.toLowerCase().includes(q)) return false;
     return true;
   });
 
@@ -161,7 +175,9 @@ function render() {
     return;
   }
 
-  $('list').innerHTML = filtered.map((p, i) => {
+  const visible = filtered.slice(0, state.shown);
+  const rest = filtered.length - visible.length;
+  $('list').innerHTML = visible.map((p) => {
     const taxTags = (p.taxTypes || []).slice(0, 3).map((t) => `<span class="tag">${esc(t)}</span>`).join('');
     const prefTag = p.isPreference && p.prefType ? `<span class="tag pref">${esc(p.prefType)}</span>` : '';
     const regionTag = p.region ? `<span class="tag region">${esc(p.region)}</span>` : '';
@@ -183,8 +199,21 @@ function render() {
         <div class="meta">${statusTag}${vatTag}${regionTag}${areaTag}${prefTag}${taxTags}${lvTag}</div>
         <div class="sub"><span>${esc(docDate)}</span><span>${dept} <span class="arrow">›</span></span></div>
       </a>`;
-  }).join('');
+  }).join('') + (rest > 0
+    ? `<div class="load-more"><button id="loadMoreBtn">加载更多 · 还有 ${rest} 条</button></div>`
+    : '');
+
+  const btn = $('loadMoreBtn');
+  if (btn) btn.addEventListener('click', () => { state.shown += PAGE_SIZE; render(false); });
 }
+
+// ===== 回到顶部 =====
+(function () {
+  const bt = $('backTop');
+  if (!bt) return;
+  window.addEventListener('scroll', () => bt.classList.toggle('show', window.scrollY > 600), { passive: true });
+  bt.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+})();
 
 // ===== 事件绑定 =====
 $('prefToggle').addEventListener('click', function () {

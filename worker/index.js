@@ -30,8 +30,8 @@ const GD_COLUMNS = [
 // 每栏目抓取的最新条数（政策浏览只需要「最新」，抓 50 条足够覆盖近 1-2 年）
 const PER_COLUMN = 50;
 
-// KV 缓存有效期：1 小时（与定时任务频率一致）
-const CACHE_TTL_MS = 3600 * 1000;
+// KV 缓存有效期：24 小时（cron 每天抓一次，24h 内命中率最高；过期走 stale-while-revalidate 兜底）
+const CACHE_TTL_MS = 24 * 3600 * 1000;
 
 // ===== 优惠判定关键词（标题/文号命中即视为「税收优惠」政策）=====
 const PREF_KEYWORDS = [
@@ -512,7 +512,7 @@ async function writeKV(env, data) {
   }
 }
 
-// 判断缓存是否仍新鲜（1 小时内）
+// 判断缓存是否仍新鲜（24 小时内）
 function isFresh(data) {
   if (!data || !data.updatedAt) return false;
   return Date.now() - new Date(data.updatedAt).getTime() < CACHE_TTL_MS;
@@ -530,10 +530,16 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // 政策列表 API（读 KV 秒出，缺失/过期则现场抓取兜底）
+    // 政策列表 API：读 KV 秒出；过期但有旧数据 → 先返旧数据 + 后台刷新（stale-while-revalidate）；完全无缓存才现场抓取
     if (url.pathname === '/api/policies') {
       const cached = await readKV(env);
       if (isFresh(cached)) return json(cached);
+      if (cached) {
+        ctx.waitUntil((async () => {
+          try { const fresh = await fetchAll(); await writeKV(env, fresh); } catch (e) { console.error('bg refresh failed:', e?.message || e); }
+        })());
+        return json(cached);
+      }
       const data = await fetchAll();
       ctx.waitUntil(writeKV(env, data));
       return json(data);
