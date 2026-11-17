@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>税收优惠计算器 · 个人与企业税务筹划</title>
+  <style>
+    :root {
+      --primary: #2f6fed;
+      --green: #16a34a;
+      --red: #dc2626;
+      --orange: #ea580c;
+      --bg: #f4f6fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding-bottom: 40px;
+    }
+    .header {
+      background: linear-gradient(135deg, #2f6fed, #3b82f6);
+      color: #fff;
+      padding: 20px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .header h1 { font-size: 20px; font-weight: 600; }
+    .header .sub { font-size: 13px; opacity: .9; margin-top: 2px; }
+    .policy-badge {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 12px;
+      background: rgba(255,255,255,.2);
+      padding: 2px 10px;
+      border-radius: 12px;
+    }
+    .tabs {
+      display: flex;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 82px;
+      z-index: 9;
+    }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 12px 0;
+      font-size: 15px;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+    .panel { display: none; padding: 16px; }
+    .panel.active { display: block; }
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
+    .card h2 { font-size: 16px; margin-bottom: 12px; }
+    .field { margin-bottom: 10px; }
+    .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+    .field input, .field select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+    }
+    .field input:focus { border-color: var(--primary); }
+    .row { display: flex; gap: 10px; }
+    .row .field { flex: 1; }
+    .checkbox { display: flex; align-items: center; gap: 6px; font-size: 14px; margin-bottom: 8px; cursor: pointer; }
+    .checkbox input { width: 16px; height: 16px; }
+    .result {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 4px;
+    }
+    .result .big {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .result .big.green { color: var(--green); }
+    .result .big.red { color: var(--red); }
+    .result .line { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .tag {
+      display: inline-block;
+      font-size: 12px;
+      padding: 1px 8px;
+      border-radius: 6px;
+      background: #eef2ff;
+      color: var(--primary);
+      margin-right: 4px;
+    }
+    .note { font-size: 12px; color: var(--muted); margin-top: 8px; }
+    .tip { font-size: 12px; color: var(--orange); margin-top: 8px; }
+    .footer { text-align: center; font-size: 12px; color: var(--muted); padding: 16px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>税收优惠计算器</h1>
+    <div class="sub">个人 + 小微企业 · 一体化税务筹划</div>
+    <span class="policy-badge" id="policyBadge">政策版本：加载中…</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="personal">个人</div>
+    <div class="tab" data-tab="enterprise">企业</div>
+  </div>
+
+  <!-- 个人 -->
+  <div class="panel active" id="panel-personal">
+    <!-- 工资个税 -->
+    <div class="card">
+      <h2>💰 工资薪金个税</h2>
+      <div class="row">
+        <div class="field"><label>月薪（元）</label><input id="income" type="number" value="20000" inputmode="decimal"></div>
+        <div class="field"><label>月社保公积金（元）</label><input id="socialSecurity" type="number" value="2000" inputmode="decimal"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>月专项附加扣除（元）</label><input id="monthlyDeduction" type="number" value="1500" inputmode="decimal"></div>
+        <div class="field"><label>年终奖（元，0=无）</label><input id="annualBonus" type="number" value="60000" inputmode="decimal"></div>
+      </div>
+      <div class="result" id="incomeResult"></div>
+    </div>
+
+    <!-- 专项附加扣除 -->
+    <div class="card">
+      <h2>🧾 专项附加扣除测算</h2>
+      <div class="row">
+        <div class="field"><label>子女教育（个）</label><input id="childrenCount" type="number" value="0"></div>
+        <div class="field"><label>3岁以下婴幼儿（个）</label><input id="infantCount" type="number" value="0"></div>
+      </div>
+      <div class="checkbox"><input type="checkbox" id="elderly">赡养老人（独生子女 3000/月）</div>
+      <div class="checkbox"><input type="checkbox" id="housingLoan">住房贷款利息（1000/月）</div>
+      <div class="row">
+        <div class="field"><label>住房租金城市</label>
+          <select id="housingRentTier">
+            <option value="-1">不选</option>
+            <option value="0">直辖市/省会/计划单列市</option>
+            <option value="1">人口>100万城市</option>
+            <option value="2">其他城市</option>
+          </select>
+        </div>
+        <div class="field"><label>继续教育（学历）</label>
+          <select id="continuingEdu"><option value="0">无</option><option value="1">有（400/月）</option></select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field"><label>职业资格继续教育</label>
+          <select id="continuingCert"><option value="0">无</option><option value="1">有（3600/年）</option></select>
+        </div>
+        <div class="field"><label>大病医疗年度自付（元）</label><input id="medicalAnnual" type="number" value="0"></div>
+      </div>
+      <div class="result" id="deductionResult"></div>
+    </div>
+
+    <!-- 汇算退税 -->
+    <div class="card">
+      <h2>📅 汇算清缴（退/补税）</h2>
+      <div class="row">
+        <div class="field"><label>全年收入（元）</label><input id="annualIncome" type="number" value="240000"></div>
+        <div class="field"><label>全年已预缴（元）</label><input id="annualPrepaid" type="number" value="11000"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>全年社保公积金（元）</label><input id="socialSecurityYear" type="number" value="24000"></div>
+        <div class="field"><label>月专项附加（元）</label><input id="settleDeduction" type="number" value="1500"></div>
+      </div>
+      <div class="result" id="settleResult"></div>
+    </div>
+  </div>
+
+  <!-- 企业 -->
+  <div class="panel" id="panel-enterprise">
+    <div class="card">
+      <h2>🏢 小微企业所得税</h2>
+      <div class="field"><label>年应纳税所得额（利润，元）</label><input id="smeProfit" type="number" value="2000000"></div>
+      <div class="result" id="smeResult"></div>
+    </div>
+    <div class="card">
+      <h2>🧾 小规模纳税人增值税</h2>
+      <div class="field"><label>月销售额（元）</label><input id="monthlySales" type="number" value="80000"></div>
+      <div class="result" id="vatResult"></div>
+    </div>
+    <div class="card">
+      <h2>🏪 个体工商户经营所得</h2>
+      <div class="field"><label>年应纳税所得额（元）</label><input id="businessIncome" type="number" value="300000"></div>
+      <div class="result" id="businessResult"></div>
+    </div>
+  </div>
+
+  <div class="footer">本工具仅供税务知识普及与测算参考，不构成税务建议。<br>政策以官方最新发布为准。</div>
+
+  <script src="app.js"></script>
+  <script>
+    // ===== 初始化 + 政策同步 =====
+    loadCache();
+    function renderPolicyBadge() {
+      const el = document.getElementById('policyBadge');
+      const srcMap = { builtin: '内置数据', cache: '本地缓存', cloud: '已同步云端' };
+      el.textContent = `政策版本 ${policyMeta.version} · ${srcMap[policyMeta.source] || policyMeta.source}`;
+    }
+    renderPolicyBadge();
+    syncPolicy().then(() => { renderPolicyBadge(); renderAll(); });
+
+    // ===== Tab 切换 =====
+    document.querySelectorAll('.tab').forEach(t => {
+      t.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        document.getElementById('panel-' + t.dataset.tab).classList.add('active');
+      });
+    });
+
+    // ===== 工具函数 =====
+    function $(id) { return document.getElementById(id); }
+    function money(n) { return '¥ ' + (Math.round(n * 100) / 100).toLocaleString('zh-CN'); }
+
+    // ===== 工资个税 =====
+    function renderIncome() {
+      const r = calcIncomeTax({
+        monthlyIncome: +$('income').value || 0,
+        socialSecurity: +$('socialSecurity').value || 0,
+        monthlyDeduction: +$('monthlyDeduction').value || 0,
+        annualBonus: +$('annualBonus').value || 0
+      });
+      let bonusHtml = '';
+      if (r.bonus) {
+        bonusHtml = `<div class="line">年终奖 ${money(r.bonus.amount)}：最优「${r.bonus.betterMode}」→ 税额 ${money(r.bonus.best.tax)}，比另一种省 ${money(r.bonus.saving)}</div>`;
+      }
+      $('incomeResult').innerHTML = `
+        <div>全年应纳税所得额 <span class="big">${money(r.annualTaxable)}</span></div>
+        <div>全年个税 <span class="big">${money(r.totalYearTax)}</span></div>
+        <div class="line">月均个税 ${money(r.taxPerMonth)} · 月到手 ${money(r.netPerMonth)}</div>
+        ${bonusHtml}
+        <div class="note">应纳税所得额 = 年收入 − 6万 − 社保公积金 − 专项附加</div>
+      `;
+    }
+
+    // ===== 专项附加 =====
+    function renderDeduction() {
+      const r = calcSpecialDeductions({
+        childrenCount: +$('childrenCount').value || 0,
+        infantCount: +$('infantCount').value || 0,
+        elderly: $('elderly').checked,
+        housingLoan: $('housingLoan').checked,
+        housingRentTier: +$('housingRentTier').value,
+        continuingEdu: +$('continuingEdu').value === 1,
+        continuingCert: +$('continuingCert').value === 1,
+        medicalAnnual: +$('medicalAnnual').value || 0
+      });
+      const detailHtml = r.detail.map(d => `<span class="tag">${d.name} ${money(d.monthly)}/月</span>`).join(' ') || '<span class="tag">未勾选</span>';
+      $('deductionResult').innerHTML = `
+        <div>每月可扣除 <span class="big green">${money(r.monthly)}</span></div>
+        <div class="line">全年合计 ${money(r.annual)}（含大病医疗 ${money(r.medicalAnnualDeduct)}）</div>
+        <div style="margin-top:6px">${detailHtml}</div>
+      `;
+    }
+
+    // ===== 汇算 =====
+    function renderSettle() {
+      const r = calcAnnualSettle({
+        annualIncome: +$('annualIncome').value || 0,
+        annualPrepaid: +$('annualPrepaid').value || 0,
+        monthlyDeduction: +$('settleDeduction').value || 0,
+        socialSecurityYear: +$('socialSecurityYear').value || 0
+      });
+      const cls = r.type === '退税' ? 'green' : (r.type === '补税' ? 'red' : '');
+      $('settleResult').innerHTML = `
+        <div>汇算结果 <span class="big ${cls}">${r.type} ${money(r.absDiff)}</span></div>
+        <div class="line">应纳 ${money(r.due)} · 已预缴 ${money(r.prepaid)}</div>
+      `;
+    }
+
+    // ===== 企业 =====
+    function renderSme() {
+      const r = calcSmeIncomeTax(+$('smeProfit').value || 0);
+      $('smeResult').innerHTML = `
+        <div>应缴企业所得税 <span class="big">${money(r.tax)}</span></div>
+        <div class="line">实际税负 ${r.effectiveRate}% · ${r.note}</div>
+      `;
+    }
+    function renderVat() {
+      const r = calcSmeVat(+$('monthlySales').value || 0);
+      $('vatResult').innerHTML = r.exempt
+        ? `<div class="big green">免征增值税</div><div class="line">${r.note}</div>`
+        : `<div>应缴增值税 <span class="big">${money(r.vat)}</span>（附加 ${money(r.surcharge)}）</div><div class="line">${r.note}</div>`;
+    }
+    function renderBusiness() {
+      const r = calcBusinessTax(+$('businessIncome').value || 0);
+      $('businessResult').innerHTML = r.tax === 0
+        ? `<div class="big green">无需缴税</div><div class="line">${r.note}</div>`
+        : `<div>应缴经营所得税 <span class="big">${money(r.tax)}</span></div><div class="line">实际税负 ${r.effectiveRate}%</div>`;
+    }
+
+    // ===== 事件绑定 + 全量渲染 =====
+    const inputs = ['income','socialSecurity','monthlyDeduction','annualBonus','childrenCount','infantCount','housingRentTier','continuingEdu','continuingCert','medicalAnnual','annualIncome','annualPrepaid','socialSecurityYear','settleDeduction','smeProfit','monthlySales','businessIncome'];
+    inputs.forEach(id => { const el = $(id); if (el) el.addEventListener('input', renderAll); });
+    ['elderly','housingLoan'].forEach(id => { const el = $(id); if (el) el.addEventListener('change', renderAll); });
+
+    function renderAll() {
+      renderIncome();
+      renderDeduction();
+      renderSettle();
+      renderSme();
+      renderVat();
+      renderBusiness();
+    }
+    renderAll();
+  </script>
+</body>
+</html>
