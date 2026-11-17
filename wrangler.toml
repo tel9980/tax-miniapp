@@ -8,9 +8,9 @@ directory = "./web"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
 
-# 自定义域名：te.1211.cc.cd
+# 自定义域名：jy.1211.cc.cd
 [[routes]]
-pattern = "te.1211.cc.cd"
+pattern = "jy.1211.cc.cd"
 custom_domain = true
 
 # 政策数据持久化到 KV（跨边缘节点共享、不会被驱逐）

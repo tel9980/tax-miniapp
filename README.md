@@ -10,7 +10,7 @@
 
 ## 线上地址
 
-**https://te.1211.cc.cd**
+**https://jy.1211.cc.cd**
 
 ## 功能
 
@@ -25,7 +25,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  浏览器  te.1211.cc.cd（Cloudflare Worker + 静态资源）      │
+│  浏览器  jy.1211.cc.cd（Cloudflare Worker + 静态资源）      │
 │                                                         │
 │  前端 web/（index.html + app.js）                        │
 │    └─ fetch /api/policies ──► Worker 逻辑                │
@@ -46,7 +46,7 @@
 **为什么免费、为什么不用备案、为什么不用数据库**：
 
 - **免费**：Cloudflare Workers 免费额度（10 万次请求/天）远超政策浏览需求；Worker 内置 Cache API 免费，无需 KV / D1 等付费绑定。
-- **免备案**：走 Cloudflare 边缘 + 自有域名 `te.1211.cc.cd`，不经过国内服务器，无需 ICP 备案。
+- **免备案**：走 Cloudflare 边缘 + 自有域名 `jy.1211.cc.cd`，不经过国内服务器，无需 ICP 备案。
 - **无数据库**：政策数据量小（几百条），用 Cache API 内存缓存即可，每小时自动刷新，无需持久化数据库。
 
 ## 目录说明
@@ -77,7 +77,7 @@ npx wrangler deploy
 npx wrangler dev
 ```
 
-自定义域名在 `wrangler.toml` 的 `[[routes]]` 配置，`te.1211.cc.cd` 部署时自动建子域并签发证书。
+自定义域名在 `wrangler.toml` 的 `[[routes]]` 配置，`jy.1211.cc.cd` 部署时自动建子域并签发证书。
 
 ## 免责声明
 

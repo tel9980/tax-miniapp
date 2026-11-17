@@ -4,7 +4,7 @@
 
 | 项目 | 值 |
 |---|---|
-| 访问地址 | **https://te.1211.cc.cd** |
+| 访问地址 | **https://jy.1211.cc.cd** |
 | 部署方式 | Cloudflare Workers Static Assets（纯静态，无服务器、无数据库） |
 | 架构参考 | 同账号下的 `cf-finance-calc`（js.1211.cc.cd），完全同款 |
 | 政策数据 | GitHub 仓库 `tel9980/tax-miniapp` 的 `data/policies.json` |
@@ -16,7 +16,7 @@
 参考了 `cf-finance-calc` 的成功经验，走**纯静态托管**：
 
 ```
-浏览器 → te.1211.cc.cd（CF Workers 托管 web/ 静态文件）
+浏览器 → jy.1211.cc.cd（CF Workers 托管 web/ 静态文件）
               │
               └─ 打开时 fetch 政策（按优先级）：
                    ① jsDelivr CDN（cdn.jsdelivr.net）
@@ -32,7 +32,7 @@
 
 | 文件 | 作用 |
 |---|---|
-| `wrangler.toml` | CF 部署配置：`[assets]` 托管 `web/`，`[[routes]]` 绑 `te.1211.cc.cd` |
+| `wrangler.toml` | CF 部署配置：`[assets]` 托管 `web/`，`[[routes]]` 绑 `jy.1211.cc.cd` |
 | `web/index.html` | 界面（个人 + 企业 7 个计算器） |
 | `web/app.js` | 税务算法 + 政策同步逻辑 |
 | `web/_headers` | 安全头 + 缓存策略 + CSP |
@@ -71,4 +71,4 @@ npx wrangler deploy
 
 ## 换域名
 
-改 `wrangler.toml` 里的 `pattern`（如 `te.1211.cc.cd` → 别的子域），再 `npx wrangler deploy` 一次，CF 自动建 DNS 记录并签发证书。
+改 `wrangler.toml` 里的 `pattern`（如 `jy.1211.cc.cd` → 别的子域），再 `npx wrangler deploy` 一次，CF 自动建 DNS 记录并签发证书。
