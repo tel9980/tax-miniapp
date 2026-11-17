@@ -206,5 +206,87 @@ $('clearBtn').addEventListener('click', () => {
   render();
 });
 
+// ===== 增值税新法衔接对照表 =====
+let vatData = null;
+const vatState = { group: '全部' };
+
+async function loadVat() {
+  if (vatData) return;
+  $('vatList').innerHTML = '<div class="loading"><div class="spinner"></div>正在加载衔接表…</div>';
+  try {
+    const r = await fetch('/api/vat-continuity', { headers: { Accept: 'application/json' } });
+    vatData = await r.json();
+  } catch (e) {
+    $('vatList').innerHTML = '<div class="loading">加载失败，请刷新重试</div>';
+    return;
+  }
+  $('vatKey').innerHTML =
+    '<strong>' + esc(vatData.law.lawName) + '</strong> 自 ' + esc(vatData.law.lawFrom) + ' 起施行。' +
+    esc(vatData.law.keyRule) +
+    '<br>依据：<a href="' + esc(vatData.law.url) + '" target="_blank" rel="noopener">' + esc(vatData.law.docNo) + ' 原文</a>';
+  buildVatGroupChips();
+  renderVat();
+}
+
+function buildVatGroupChips() {
+  const box = $('vatGroupFilters');
+  const groups = ['全部', '继续有效', ...vatData.groups.filter((g) => g !== '已停止执行'), '已停止执行'];
+  box.innerHTML = groups.map((g) =>
+    '<div class="chip' + (vatState.group === g ? ' on' : '') + '" data-g="' + esc(g) + '">' + esc(g) + '</div>'
+  ).join('');
+  box.querySelectorAll('.chip').forEach((c) => {
+    c.addEventListener('click', () => {
+      vatState.group = c.dataset.g;
+      buildVatGroupChips();
+      renderVat();
+    });
+  });
+}
+
+function renderVat() {
+  const items = vatData.items.filter((x) => {
+    if (vatState.group === '全部') return true;
+    if (vatState.group === '继续有效') return x.status === '继续有效';
+    if (vatState.group === '已停止执行') return x.status === '已停止';
+    return x.g === vatState.group;
+  });
+  const okCount = vatData.items.filter((x) => x.status === '继续有效').length;
+  const stopCount = vatData.items.filter((x) => x.status === '已停止').length;
+  $('vatStats').textContent =
+    '共 ' + vatData.items.length + ' 项 · 继续有效 ' + okCount + ' 项 · 已停止 ' + stopCount + ' 项（当前显示 ' + items.length + ' 项）';
+
+  $('vatList').innerHTML = items.map((x) => {
+    const stopped = x.status === '已停止';
+    const untilTag = x.until === '长期'
+      ? '<span class="tag st-valid">长期有效</span>'
+      : (stopped
+        ? '<span class="tag stopped">已停止 ' + esc(x.until) + '</span>'
+        : '<span class="tag st-valid">有效至 ' + esc(x.until) + '</span>');
+    const docTag = x.docNo ? '<span class="tag lv">' + esc(x.docNo) + '</span>' : '';
+    const basisTag = x.basis ? '<span class="tag lv">' + esc(x.basis) + '</span>' : '';
+    return `
+      <a class="item" href="${esc(x.url)}" target="_blank" rel="noopener">
+        <div class="title">${esc(x.title)}</div>
+        <div class="summary">${esc(x.plain || '')}</div>
+        <div class="meta">${untilTag}${docTag}${basisTag}</div>
+      </a>`;
+  }).join('') || '<div class="loading">该分类下暂无条目</div>';
+}
+
+// ===== Tab 切换 =====
+$('tabPolicy').addEventListener('click', () => {
+  $('tabPolicy').classList.add('on');
+  $('tabVat').classList.remove('on');
+  $('policyView').style.display = '';
+  $('vatView').style.display = 'none';
+});
+$('tabVat').addEventListener('click', () => {
+  $('tabVat').classList.add('on');
+  $('tabPolicy').classList.remove('on');
+  $('policyView').style.display = 'none';
+  $('vatView').style.display = '';
+  loadVat();
+});
+
 // 启动
 load();

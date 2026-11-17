@@ -186,6 +186,21 @@
 
     .footer { text-align: center; font-size: 12px; color: var(--muted); padding: 20px 16px 8px; line-height: 1.8; }
     .footer a { color: var(--primary); text-decoration: none; }
+
+    .tabs { display: flex; gap: 8px; padding: 12px 16px 4px; }
+    .tab {
+      flex: 1; text-align: center; padding: 9px 0; border-radius: 9px;
+      font-size: 14px; font-weight: 600; color: var(--muted);
+      background: #fff; border: 1px solid var(--line); cursor: pointer;
+    }
+    .tab.on { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .vat-key {
+      margin: 12px 16px 0; padding: 12px 14px; border-radius: 10px;
+      background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412;
+      font-size: 12.5px; line-height: 1.7;
+    }
+    .vat-key a { color: #c2410c; font-weight: 600; }
+    .tag.stopped { background: #f3f4f6; color: #9ca3af; text-decoration: line-through; }
   </style>
 </head>
 <body>
@@ -200,6 +215,12 @@
     <a href="https://fgk.chinatax.gov.cn/zcfgk/c102416/c5247434/content.html" target="_blank" rel="noopener">2026年第10号原文</a> 为准。
   </div>
 
+  <div class="tabs">
+    <div class="tab on" id="tabPolicy">政策库</div>
+    <div class="tab" id="tabVat">增值税衔接表</div>
+  </div>
+
+  <div id="policyView">
   <div class="search-wrap">
     <div class="search">
       <span class="icon">🔍</span>
@@ -219,6 +240,14 @@
   <div class="stats" id="stats">正在加载…</div>
 
   <div class="list" id="list"></div>
+  </div>
+
+  <div id="vatView" style="display:none">
+    <div class="vat-key" id="vatKey"></div>
+    <div class="filters" id="vatGroupFilters"></div>
+    <div class="stats" id="vatStats">正在加载…</div>
+    <div class="list" id="vatList"></div>
+  </div>
 
   <div class="footer">
     数据来源：国家税务总局政策法规库 + 广东省税务局官网，自动抓取、每天更新。<br>

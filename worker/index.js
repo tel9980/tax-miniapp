@@ -7,6 +7,8 @@
 //   3) /api/refresh 手动强制刷新
 
 // ===== 栏目配置：官方「政策法规库」各栏目的 channelId（UUID，从各列表页 HTML 提取）=====
+import { VAT_LAW, VAT_GROUPS, VAT_CONTINUITY, withUrl } from './vatContinuity.js';
+
 const COLUMNS = [
   { code: 'c102416', name: '财税文件',         channelId: '2cb303fdee614232b79552d52bb057d6' },
   { code: 'c100012', name: '税务规范性文件',   channelId: '470b437b304f434396500a1e2edc7f28' },
@@ -79,7 +81,7 @@ const SEED_POLICIES = [
   { id: 'seed-nev', title: '新能源汽车车辆购置税减免', docNo: '财政部 税务总局 工业和信息化部公告2023年第10号', date: '2023-06-19', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5207352/content.html', taxTypes: ['车辆购置税'], industry: '社会民生', effectLevel: '财税文件', department: '财政部,国家税务总局,工业和信息化部', isPreference: true, prefType: '免税', column: '高频核心', region: '全国', plain: '买新能源车：2024-2025年免征购置税，2026-2027年减半征收。每辆车最高能省3万元。' },
   { id: 'seed-deduction', title: '提高个人所得税专项附加扣除标准（子女教育、3岁以下婴幼儿照护、赡养老人）', docNo: '国家税务总局公告2023年第14号', date: '2023-08-30', url: 'https://fgk.chinatax.gov.cn/zcfgk/c100012/c5213592/content.html', taxTypes: ['个人所得税'], industry: '社会民生', effectLevel: '税务规范性文件', department: '国家税务总局', isPreference: true, prefType: '扣除抵免', column: '高频核心', region: '全国', plain: '养娃和养老能少交税：子女教育每孩每月扣2000元（原1000）、3岁以下婴幼儿照护每孩每月扣2000元（原1000）、赡养老人独生子女每月扣3000元（原2000）。从2023年1月起算，长期有效。' },
   { id: 'seed-pension', title: '在全国范围实施个人养老金个人所得税优惠政策', docNo: '财政部 税务总局公告2024年第21号', date: '2024-12-12', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5237110/content.html', taxTypes: ['个人所得税'], industry: '社会民生', effectLevel: '财税文件', department: '财政部,国家税务总局', isPreference: true, prefType: '扣除抵免', column: '高频核心', region: '全国', plain: '自己往个人养老金账户存钱（每年最多12000元），这部分钱当年不用交个税，等退休领钱时再按3%低税率交。长期有效。' },
-  { id: 'seed-disabled', title: '促进残疾人就业增值税优惠政策', docNo: '财税〔2016〕52号', date: '2016-05-05', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5203716/content.html', taxTypes: ['增值税'], industry: '社会民生', effectLevel: '财税文件', department: '财政部,国家税务总局', isPreference: true, prefType: '退税', column: '高频核心', region: '全国', plain: '【已停止执行】原政策：企业招残疾人上班，可按当地最低工资的4倍退还增值税。因《增值税法》2026年1月1日施行，财政部 税务总局公告2026年第10号明确"2025年12月31日前制发文件规定的国内环节增值税优惠政策同时停止执行"，本文件不在延续清单内，故自2026年起停止执行。', status: '已停止', expiry: '2025-12-31', summary: '原规定：对安置残疾人的单位和个体工商户，按实际安置残疾人数，限额即征即退增值税（每人每月按当地最低工资标准的4倍确定）。注意：2026年1月1日《增值税法》施行后，财政部 税务总局公告2026年第10号规定此前制发的国内环节增值税优惠政策同时停止执行且未列入延续清单，本政策自2026年起已停止执行，如有新规请以官方发布为准。' },
+  { id: 'seed-disabled', title: '促进残疾人就业增值税优惠（限额即征即退）', docNo: '财税〔2016〕52号', date: '2016-05-05', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5203716/content.html', taxTypes: ['增值税'], industry: '社会民生', effectLevel: '财税文件', department: '财政部,国家税务总局', isPreference: true, prefType: '退税', column: '高频核心', region: '全国', plain: '企业招用残疾人上班，按实际安置人数，每人每月可按当地最低工资标准的4倍限额退还增值税。2026年新法施行后这条依然有效：财政部 税务总局公告2026年第10号第五条第五项把财税〔2016〕52号列入继续实施清单，执行至2027年底。', summary: '对安置残疾人的单位和个体工商户，按实际安置残疾人数限额即征即退增值税，每人每月退还限额为当地最低工资标准的4倍。依据财税〔2016〕52号，经财政部 税务总局公告2026年第10号第五条第五项列入继续实施清单，执行期间2026年1月1日至2027年12月31日。' },
 ];
 
 // ===== 广东区域优惠核心（横琴/前海/南沙/大湾区，财税文件稳定、总局法规库收录不全，硬编码兜底）=====
@@ -534,6 +536,17 @@ export default {
       const data = await fetchAll();
       ctx.waitUntil(writeKV(env, data));
       return json(data);
+    }
+
+    // 增值税新法衔接对照表（静态数据，无需抓取）
+    if (url.pathname === '/api/vat-continuity') {
+      return json({
+        law: VAT_LAW,
+        groups: VAT_GROUPS,
+        items: withUrl(VAT_CONTINUITY),
+        total: VAT_CONTINUITY.length,
+        updatedAt: new Date().toISOString(),
+      });
     }
 
     // 手动刷新（强制重新抓取 → 写 KV）
