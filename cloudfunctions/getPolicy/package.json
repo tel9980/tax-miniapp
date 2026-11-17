@@ -1,0 +1,6 @@
+{
+  "name": "getPolicy",
+  "version": "1.0.0",
+  "description": "从 GitHub 拉取最新税收政策 JSON 并下发给小程序",
+  "main": "index.js"
+}

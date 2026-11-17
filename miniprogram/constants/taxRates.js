@@ -1,4 +1,11 @@
-// constants/taxRates.js —— 税收档位与常量（以现行政策为基准，标注年份便于维护）
+// constants/taxRates.js —— 税收档位与常量（内置兜底默认值）
+// 说明：这是「离线兜底」数据。当云函数同步失败/未开通云开发时使用。
+// 最新政策以 GitHub 仓库 data/policies.json 为准，由云函数自动下发覆盖。
+
+const DEFAULT_POLICY_VERSION = '2026.1';
+
+// 无上限档位用 10 亿表示（JSON 兼容，现实中应纳税所得额不会达到）
+const NO_LIMIT = 1000000000;
 
 const TAX_YEAR = 2026;
 
@@ -11,7 +18,7 @@ const COMPREHENSIVE_RATES = [
   { level: 4, min: 300000, max: 420000, rate: 0.25, quickDeduct: 31920 },
   { level: 5, min: 420000, max: 660000, rate: 0.30, quickDeduct: 52920 },
   { level: 6, min: 660000, max: 960000, rate: 0.35, quickDeduct: 85920 },
-  { level: 7, min: 960000, max: Infinity, rate: 0.45, quickDeduct: 181920 }
+  { level: 7, min: 960000, max: NO_LIMIT, rate: 0.45, quickDeduct: 181920 }
 ];
 
 // ===== 全年一次性奖金（单独计税）税率表 =====
@@ -23,7 +30,7 @@ const BONUS_RATES = [
   { level: 4, min: 25000, max: 35000, rate: 0.25, quickDeduct: 2660 },
   { level: 5, min: 35000, max: 55000, rate: 0.30, quickDeduct: 4410 },
   { level: 6, min: 55000, max: 80000, rate: 0.35, quickDeduct: 7160 },
-  { level: 7, min: 80000, max: Infinity, rate: 0.45, quickDeduct: 15160 }
+  { level: 7, min: 80000, max: NO_LIMIT, rate: 0.45, quickDeduct: 15160 }
 ];
 
 // ===== 专项附加扣除标准（每月/年）=====
@@ -70,7 +77,7 @@ const BUSINESS_RATES = [
   { level: 2, min: 30000, max: 90000, rate: 0.10, quickDeduct: 1500 },
   { level: 3, min: 90000, max: 300000, rate: 0.20, quickDeduct: 10500 },
   { level: 4, min: 300000, max: 500000, rate: 0.30, quickDeduct: 40500 },
-  { level: 5, min: 500000, max: Infinity, rate: 0.35, quickDeduct: 65500 }
+  { level: 5, min: 500000, max: NO_LIMIT, rate: 0.35, quickDeduct: 65500 }
 ];
 
 // ===== 小型微利企业年应纳税所得额减半政策（2023-2027）=====
@@ -101,6 +108,8 @@ const SIX_TAX_HALF = {
 };
 
 module.exports = {
+  DEFAULT_POLICY_VERSION,
+  NO_LIMIT,
   TAX_YEAR,
   COMPREHENSIVE_RATES,
   BONUS_RATES,

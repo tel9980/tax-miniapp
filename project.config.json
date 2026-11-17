@@ -1,5 +1,7 @@
 {
-  "description": "税收优惠小程序 —— 个人 + 小微企业 一体化税务筹划助手",
+  "description": "税收优惠小程序 —— 个人 + 小微企业 一体化税务筹划助手（政策自动同步版）",
+  "miniprogramRoot": "miniprogram/",
+  "cloudfunctionRoot": "cloudfunctions/",
   "packOptions": {
     "ignore": [],
     "include": []

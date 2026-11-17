@@ -1,0 +1,64 @@
+{
+  "version": "2026.1",
+  "updatedAt": "2026-01-01",
+  "note": "税收政策数据源。政策变化时：改这里的数据 + 把 version 加一（如 2026.2），小程序端会自动同步。",
+  "policy": {
+    "TAX_YEAR": 2026,
+    "COMPREHENSIVE_RATES": [
+      { "level": 1, "min": 0, "max": 36000, "rate": 0.03, "quickDeduct": 0 },
+      { "level": 2, "min": 36000, "max": 144000, "rate": 0.1, "quickDeduct": 2520 },
+      { "level": 3, "min": 144000, "max": 300000, "rate": 0.2, "quickDeduct": 16920 },
+      { "level": 4, "min": 300000, "max": 420000, "rate": 0.25, "quickDeduct": 31920 },
+      { "level": 5, "min": 420000, "max": 660000, "rate": 0.3, "quickDeduct": 52920 },
+      { "level": 6, "min": 660000, "max": 960000, "rate": 0.35, "quickDeduct": 85920 },
+      { "level": 7, "min": 960000, "max": 1000000000, "rate": 0.45, "quickDeduct": 181920 }
+    ],
+    "BONUS_RATES": [
+      { "level": 1, "min": 0, "max": 3000, "rate": 0.03, "quickDeduct": 0 },
+      { "level": 2, "min": 3000, "max": 12000, "rate": 0.1, "quickDeduct": 210 },
+      { "level": 3, "min": 12000, "max": 25000, "rate": 0.2, "quickDeduct": 1410 },
+      { "level": 4, "min": 25000, "max": 35000, "rate": 0.25, "quickDeduct": 2660 },
+      { "level": 5, "min": 35000, "max": 55000, "rate": 0.3, "quickDeduct": 4410 },
+      { "level": 6, "min": 55000, "max": 80000, "rate": 0.35, "quickDeduct": 7160 },
+      { "level": 7, "min": 80000, "max": 1000000000, "rate": 0.45, "quickDeduct": 15160 }
+    ],
+    "SPECIAL_DEDUCTIONS": {
+      "children": { "monthly": 2000, "note": "每个子女 2000 元/月，父母可选一方100%或双方各50%扣除" },
+      "elderly": { "monthly": 3000, "note": "独生子女 3000 元/月，非独生子女分摊不超过 1500 元/月" },
+      "housingLoan": { "monthly": 1000, "maxMonths": 240, "note": "1000 元/月，最长扣除 240 个月，与住房租金二选一" },
+      "housingRent": {
+        "tiers": [
+          { "monthly": 1500, "city": "直辖市/省会/计划单列市" },
+          { "monthly": 1100, "city": "人口>100万的城市" },
+          { "monthly": 800, "city": "其他城市" }
+        ],
+        "note": "按城市分档：1500/1100/800 元/月，与住房贷款二选一"
+      },
+      "continuingEducation": { "monthly": 400, "annualCert": 3600, "note": "学历(学位)教育 400 元/月；职业资格继续教育 3600 元/年" },
+      "medical": { "annualCap": 80000, "note": "年度自付医药费超过 15000 元的部分，据实扣除，限额 80000 元/年" },
+      "infantCare": { "monthly": 2000, "note": "每个婴幼儿 2000 元/月，父母一方100%或双方各50%" }
+    },
+    "BUSINESS_RATES": [
+      { "level": 1, "min": 0, "max": 30000, "rate": 0.05, "quickDeduct": 0 },
+      { "level": 2, "min": 30000, "max": 90000, "rate": 0.1, "quickDeduct": 1500 },
+      { "level": 3, "min": 90000, "max": 300000, "rate": 0.2, "quickDeduct": 10500 },
+      { "level": 4, "min": 300000, "max": 500000, "rate": 0.3, "quickDeduct": 40500 },
+      { "level": 5, "min": 500000, "max": 1000000000, "rate": 0.35, "quickDeduct": 65500 }
+    ],
+    "SME_POLICY": {
+      "maxIncome": 3000000,
+      "effectiveRate": 0.05,
+      "conditions": { "employees": 300, "assets": 50000000, "nonTaxableIncome": 3000000 }
+    },
+    "VAT_SMALL_SCALE": {
+      "monthlyExempt": 100000,
+      "quarterlyExempt": 300000,
+      "reducedRate": 0.01,
+      "note": "小规模纳税人月销售额≤10万元（季度≤30万元）免征增值税"
+    },
+    "SIX_TAX_HALF": {
+      "note": "增值税小规模纳税人、小型微利企业、个体工商户可减半征收：资源税、城建税、房产税、城镇土地使用税、印花税、耕地占用税和教育费附加、地方教育附加",
+      "halfRate": 0.5
+    }
+  }
+}

@@ -1,7 +1,14 @@
 // utils/taxCalculator.js —— 核心税务计算算法库
 // 所有计算基于现行政策，返回结构化结果供页面渲染
 
-const R = require('../constants/taxRates');
+// 动态政策代理：每次访问 R.XXX 都从 taxConfig 取最新配置，
+// 实现「政策一变自动生效」，无需重启或重发版。
+const taxConfig = require('./taxConfig');
+const R = new Proxy({}, {
+  get(_target, prop) {
+    return taxConfig.get()[prop];
+  }
+});
 
 // 金额保留两位
 function fmt(n) {
@@ -124,7 +131,7 @@ function bonusTip(amount, soloTax, mergedIncremental) {
   const month = amount / 12;
   let tip = '';
   for (const tier of R.BONUS_RATES) {
-    if (tier.max !== Infinity && month > tier.max * 0.98 && month < tier.max * 1.05) {
+    if (tier.max < 1000000000 && month > tier.max * 0.98 && month < tier.max * 1.05) {
       tip = `注意：奖金处于跳档临界区（约月均 ${tier.max} 元），多发可能适用更高税率，建议微调或并入综合所得对比。`;
       break;
     }
