@@ -17,7 +17,11 @@ console.log('\n=== 区域优惠条目（含 area 标签）===');
 j.items.filter((p) => p.area).slice(0, 20).forEach((p) => {
   console.log(`  [${p.area}] ${p.date || '?'} ${(p.docNo || '').slice(0, 16)} ${p.title.slice(0, 48)}`);
 });
-console.log('\n=== 区域优惠里 isPreference 的 ===');
-j.items.filter((p) => p.area && p.isPreference).slice(0, 20).forEach((p) => {
-  console.log(`  [${p.area}] ${p.prefType} ${p.title.slice(0, 50)}`);
+console.log('\n=== 有效期状态分布 ===');
+const statusCount = {};
+j.items.forEach((p) => { statusCount[p.status || '未标注'] = (statusCount[p.status || '未标注'] || 0) + 1; });
+console.log(JSON.stringify(statusCount));
+console.log('\n=== 带有效期的条目（expiry 非空）===');
+j.items.filter((p) => p.expiry).slice(0, 30).forEach((p) => {
+  console.log(`  [${p.status}] ${p.expiry} ${p.title.slice(0, 48)}`);
 });

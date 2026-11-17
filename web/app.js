@@ -13,7 +13,7 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 let policies = [];
-const state = { q: '', tax: '全部', type: '全部', region: '全部', area: '全部', prefOnly: true };
+const state = { q: '', tax: '全部', type: '全部', region: '全部', area: '全部', status: '全部', prefOnly: true };
 
 // ===== 加载 =====
 async function load() {
@@ -29,6 +29,7 @@ async function load() {
   }
   buildRegionChips();
   buildAreaChips();
+  buildStatusChips();
   buildTypeChips();
   buildTaxChips();
   render();
@@ -82,6 +83,23 @@ function buildAreaChips() {
   });
 }
 
+function buildStatusChips() {
+  const holder = $('statusFilters');
+  const opts = ['全部', '生效中', '即将到期', '已到期', '已废止'];
+  holder.innerHTML = '';
+  opts.forEach((s) => {
+    const c = document.createElement('div');
+    c.className = 'chip' + (s === '全部' ? ' active' : '');
+    c.textContent = s;
+    c.addEventListener('click', () => {
+      state.status = s;
+      holder.querySelectorAll('.chip').forEach((x) => x.classList.toggle('active', x.textContent === s));
+      render();
+    });
+    holder.appendChild(c);
+  });
+}
+
 function buildTypeChips() {
   const types = new Set();
   policies.forEach((p) => { if (p.isPreference && p.prefType) types.add(p.prefType); });
@@ -128,6 +146,7 @@ function render() {
     if (state.prefOnly && !p.isPreference) return false;
     if (state.region !== '全部' && p.region !== state.region) return false;
     if (state.area !== '全部' && p.area !== state.area) return false;
+    if (state.status !== '全部' && p.status !== state.status) return false;
     if (state.tax !== '全部' && !(p.taxTypes || []).includes(state.tax)) return false;
     if (state.type !== '全部' && p.prefType !== state.type) return false;
     if (q && !`${p.title} ${p.docNo}`.toLowerCase().includes(q)) return false;
@@ -147,13 +166,16 @@ function render() {
     const prefTag = p.isPreference && p.prefType ? `<span class="tag pref">${esc(p.prefType)}</span>` : '';
     const regionTag = p.region ? `<span class="tag region">${esc(p.region)}</span>` : '';
     const areaTag = p.area ? `<span class="tag area">${esc(p.area)}</span>` : '';
+    const stCls = { '生效中': 'st-valid', '即将到期': 'st-soon', '已到期': 'st-expired', '已废止': 'st-revoked' }[p.status] || '';
+    const statusTag = (p.status && p.status !== '未标注')
+      ? `<span class="tag status ${stCls}">${esc(p.status)}${p.expiry ? ' ' + esc(p.expiry) : ''}</span>` : '';
     const lvTag = p.effectLevel ? `<span class="tag lv">${esc(p.effectLevel)}</span>` : '';
     const docDate = [p.docNo, p.date].filter(Boolean).join(' · ');
     const dept = p.department ? esc(p.department) : esc(p.column || '');
     return `
       <a class="item" href="${esc(p.url || 'https://fgk.chinatax.gov.cn/')}" target="_blank" rel="noopener">
         <div class="title">${esc(p.title)}</div>
-        <div class="meta">${regionTag}${areaTag}${prefTag}${taxTags}${lvTag}</div>
+        <div class="meta">${statusTag}${regionTag}${areaTag}${prefTag}${taxTags}${lvTag}</div>
         <div class="sub"><span>${esc(docDate)}</span><span>${dept} <span class="arrow">›</span></span></div>
       </a>`;
   }).join('');

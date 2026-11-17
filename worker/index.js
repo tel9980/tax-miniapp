@@ -163,15 +163,63 @@ function normalizeUrl(u) {
   return u;
 }
 
+// ===== 政策有效期解析（从标题/摘要提取截止日期，只标「能确定的」，不猜）=====
+function parseExpiry(text, date) {
+  if (!text) return null;
+  let m;
+  // 1. 「至/到/截止/有效期…YYYY年MM月DD日」→ 明确截止日
+  m = text.match(/(?:至|到|截止|有效期|执行至|延续至|延长至|延至|延续到|延长到)\s*(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日/);
+  if (m) return `${m[1]}-${String(m[2]).padStart(2, '0')}-${String(m[3]).padStart(2, '0')}`;
+  // 2. 「至/到/截止…YYYY年底」→ 该年 12 月 31 日
+  m = text.match(/(?:至|到|截止|有效期|延续至|延长至|延至|执行至)\s*(\d{4})\s*年\s*底/);
+  if (m) return `${m[1]}-12-31`;
+  // 3. 「延续实施/继续实施/延长…YYYY年」（默认年底，常见于延续类文件标题）
+  m = text.match(/(?:延续实施|延续执行|继续实施|继续执行|延长实施|延长执行)\s*(?:至|到)?\s*(\d{4})\s*年/);
+  if (m && +m[1] >= 2000 && +m[1] <= 2100) return `${m[1]}-12-31`;
+  // 4. 相对有效期：「有效期 X 年」（以成文日期为起点推算）
+  m = text.match(/有效期\s*(\d{1,2})\s*年/);
+  if (m && date) {
+    const start = new Date(date);
+    if (!isNaN(start)) {
+      const end = new Date(Date.UTC(start.getUTCFullYear() + (+m[1]), start.getUTCMonth(), start.getUTCDate()));
+      return end.toISOString().slice(0, 10);
+    }
+  }
+  return null;
+}
+
+// 判定状态：已到期 / 即将到期（半年内）/ 生效中 / 未标注
+function judgeStatus(expiryStr) {
+  if (!expiryStr) return { expiry: null, status: '未标注' };
+  const exp = new Date(expiryStr);
+  if (isNaN(exp)) return { expiry: expiryStr, status: '未标注' };
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const days = Math.round((exp - today) / 86400000);
+  if (days < 0) return { expiry: expiryStr, status: '已到期' };
+  if (days <= 180) return { expiry: expiryStr, status: '即将到期' };
+  return { expiry: expiryStr, status: '生效中' };
+}
+
+// 合并有效期信息到政策条目
+function withExpiry(rec, text, date) {
+  const { expiry, status } = judgeStatus(parseExpiry(text, date));
+  rec.expiry = expiry;
+  rec.status = status;
+  return rec;
+}
+
 // 解析单条原始记录 → 政策条目
 function parseRecord(rec, columnName) {
   const meta = extractMeta(rec);
   const { isPref, prefType } = classifyPreference(rec, meta);
-  return {
+  const title = (rec.title || '').trim();
+  const date = meta.writtendate || (rec.publishedTimeStr || '').slice(0, 10);
+  const out = withExpiry({
     id: genId(rec),
-    title: (rec.title || '').trim(),
+    title,
     docNo: meta.writtentext || '',
-    date: meta.writtendate || (rec.publishedTimeStr || '').slice(0, 10),
+    date,
     url: normalizeUrl(rec.url || ''),
     taxTypes: classifyTaxTypes(rec, meta),
     industry: meta.industrytypename || '',
@@ -181,7 +229,15 @@ function parseRecord(rec, columnName) {
     prefType,
     column: columnName,
     region: '全国',
-  };
+  }, `${title} ${meta.writtentext || ''} ${meta.summary || ''}`, date);
+  // 官方元数据给了「废止日期」→ 优先标已废止（比有效期更准确）
+  // 注意：官方 abolishdate 对未废止政策返回空串或字面量 "null"，需排除
+  const abolish = (meta.abolishdate || '').trim();
+  if (abolish && abolish !== 'null') {
+    out.status = '已废止';
+    out.expiry = abolish;
+  }
+  return out;
 }
 
 // ===== 广东税务局：抓取 + 解析（服务端渲染，直接解析 HTML 列表）=====
@@ -221,7 +277,7 @@ function parseGdRecord(item) {
   let h = 0;
   const s = item.url || item.title || '';
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-  return {
+  return withExpiry({
     id: 'gd-' + h.toString(36),
     title: text,
     docNo: '',
@@ -235,7 +291,7 @@ function parseGdRecord(item) {
     prefType,
     column: item.column || '广东',
     region: '广东',
-  };
+  }, text, item.date || '');
 }
 
 // ===== 总局全文搜索接口：按区域关键词自动补充最新区域政策 =====
@@ -262,11 +318,12 @@ function parseSearchRecord(item, area) {
     if (keys.some((k) => `${taxPolicy} ${title}`.includes(k))) hits.add(tax);
   }
   const docNoRaw = (item.govDoc && item.govDoc.docNum) || item.indexno || '';
-  return {
+  const date = (item.cwrq || '').slice(0, 10);
+  return withExpiry({
     id: genId({ url: item.url }),
     title,
     docNo: Array.isArray(docNoRaw) ? docNoRaw[0] : String(docNoRaw),
-    date: (item.cwrq || '').slice(0, 10),
+    date,
     url: normalizeUrl(item.url || ''),
     taxTypes: hits.size ? [...hits] : ['其他'],
     industry: item.xxgk_industryType || '',
@@ -277,7 +334,7 @@ function parseSearchRecord(item, area) {
     column: '区域政策',
     region: '广东',
     area,
-  };
+  }, `${title} ${item.govDoc && item.govDoc.docNum || ''}`, date);
 }
 
 async function fetchRegionalByKeyword(item) {
@@ -357,7 +414,8 @@ async function fetchAll() {
   });
 
   // 广东区域优惠核心 seed 始终并入（保证专题一定展示核心政策）
-  all.push(...REGIONAL_SEED);
+  // 广东区域优惠核心 seed 始终并入（保证专题一定展示核心政策），并补有效期状态
+  all.push(...REGIONAL_SEED.map((p) => withExpiry({ ...p }, `${p.title} ${p.summary || ''}`, p.date)));
 
   const seen = new Set();
   const dedup = [];
