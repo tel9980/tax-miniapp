@@ -161,7 +161,7 @@ function render() {
     return;
   }
 
-  $('list').innerHTML = filtered.map((p) => {
+  $('list').innerHTML = filtered.map((p, i) => {
     const taxTags = (p.taxTypes || []).slice(0, 3).map((t) => `<span class="tag">${esc(t)}</span>`).join('');
     const prefTag = p.isPreference && p.prefType ? `<span class="tag pref">${esc(p.prefType)}</span>` : '';
     const regionTag = p.region ? `<span class="tag region">${esc(p.region)}</span>` : '';
@@ -176,15 +176,45 @@ function render() {
     const docDate = [p.docNo, p.date].filter(Boolean).join(' · ');
     const dept = p.department ? esc(p.department) : esc(p.column || '');
     return `
-      <a class="item" href="${esc(p.url || 'https://fgk.chinatax.gov.cn/')}" target="_blank" rel="noopener">
+      <div class="item" data-i="${i}" role="button" tabindex="0">
         <div class="title">${esc(p.title)}</div>
         ${summary}
         ${hint}
         <div class="meta">${statusTag}${vatTag}${regionTag}${areaTag}${prefTag}${taxTags}${lvTag}</div>
         <div class="sub"><span>${esc(docDate)}</span><span>${dept} <span class="arrow">›</span></span></div>
-      </a>`;
+      </div>`;
   }).join('');
+  document.querySelectorAll('#list .item').forEach((el) => {
+    const p = filtered[+el.dataset.i];
+    el.addEventListener('click', () => openDetail(p));
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetail(p); } });
+  });
 }
+
+// ===== 政策详情抽屉 =====
+function openDetail(p) {
+  const stCls = { '生效中': 'st-valid', '即将到期': 'st-soon', '已到期': 'st-expired', '已停止': 'st-revoked', '已废止': 'st-revoked' }[p.status] || '';
+  $('dTitle').textContent = p.title;
+  const tags = [];
+  if (p.prefType) tags.push(`<span class="tag pref">${esc(p.prefType)}</span>`);
+  if (p.region) tags.push(`<span class="tag region">${esc(p.region)}</span>`);
+  if (p.area) tags.push(`<span class="tag area">${esc(p.area)}</span>`);
+  (p.taxTypes || []).forEach((t) => tags.push(`<span class="tag">${esc(t)}</span>`));
+  if (p.effectLevel) tags.push(`<span class="tag lv">${esc(p.effectLevel)}</span>`);
+  if (p.status && p.status !== '未标注') tags.push(`<span class="tag status ${stCls}">${esc(p.status)}${p.expiry ? ' ' + esc(p.expiry) : ''}</span>`);
+  $('dTags').innerHTML = tags.join('');
+  $('dMeta').innerHTML = [p.docNo, p.date, p.department || p.column].filter(Boolean).map(esc).join(' · ');
+  $('dPlain').innerHTML = p.plain ? '<div class="label">💡 一句话看懂</div>' + esc(p.plain) : '';
+  const sum = p.summary && p.summary !== p.plain ? p.summary : '';
+  $('dSummary').innerHTML = sum ? '<div class="label">📋 政策要点</div>' + esc(sum) : '';
+  $('dHint').innerHTML = p.linkHint ? '<div class="hint">' + esc(p.linkHint) + '</div>' : '';
+  $('dLink').href = p.url || 'https://fgk.chinatax.gov.cn/';
+  $('detailMask').style.display = 'flex';
+}
+function closeDetail() { $('detailMask').style.display = 'none'; }
+$('dClose').addEventListener('click', closeDetail);
+$('detailMask').addEventListener('click', (e) => { if (e.target === $('detailMask')) closeDetail(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDetail(); });
 
 // ===== 事件绑定 =====
 $('prefToggle').addEventListener('click', function () {
