@@ -13,5 +13,10 @@ not_found_handling = "single-page-application"
 pattern = "te.1211.cc.cd"
 custom_domain = true
 
+# 政策数据持久化到 KV（跨边缘节点共享、不会被驱逐）
+[[kv_namespaces]]
+binding = "POLICIES"
+id = "853d9ddc1d7844169f13d085af2290a2"
+
 [observability]
 enabled = true

@@ -1,7 +1,10 @@
 // 税优政策库 Worker
-// 职责：请求时抓取国家税务总局政策法规库 → 结构化 → 优惠判定 → Cache API 缓存(1h) → 返回 API
+// 职责：抓取国家税务总局政策法规库 → 结构化 → 优惠判定 → 持久化到 KV → 返回 API
 // 数据源：https://fgk.chinatax.gov.cn （官方政策法规库）
-// 缓存：用 Worker 内置 Cache API（无需 KV 权限），首次访问实时抓取，之后 1 小时内命中缓存
+// 同步机制（免费计划无 cron 配额，用惰性刷新）：
+//   1) 用户访问时读 KV 秒出；KV 缺失/超过 1 小时则现场抓取并写回 KV（官方发新政策后，
+//      下一次打开页面即自动同步）
+//   2) /api/refresh 手动强制刷新
 
 // ===== 栏目配置：官方「政策法规库」各栏目的 channelId（UUID，从各列表页 HTML 提取）=====
 const COLUMNS = [
@@ -17,6 +20,9 @@ const COLUMNS = [
 
 // 每栏目抓取的最新条数（政策浏览只需要「最新」，抓 50 条足够覆盖近 1-2 年）
 const PER_COLUMN = 50;
+
+// KV 缓存有效期：1 小时（与定时任务频率一致）
+const CACHE_TTL_MS = 3600 * 1000;
 
 // ===== 优惠判定关键词（标题/文号命中即视为「税收优惠」政策）=====
 const PREF_KEYWORDS = [
@@ -198,32 +204,47 @@ async function fetchAll() {
   };
 }
 
+// ===== KV 读写 =====
+async function readKV(env) {
+  try {
+    return await env.POLICIES.get('policies', 'json');
+  } catch {
+    return null;
+  }
+}
+
+async function writeKV(env, data) {
+  try {
+    await env.POLICIES.put('policies', JSON.stringify(data));
+  } catch (e) {
+    console.error('KV write failed:', e?.message || e);
+  }
+}
+
+// 判断缓存是否仍新鲜（1 小时内）
+function isFresh(data) {
+  if (!data || !data.updatedAt) return false;
+  return Date.now() - new Date(data.updatedAt).getTime() < CACHE_TTL_MS;
+}
+
 // ===== Worker 入口 =====
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // 政策列表 API（带 Cache API 缓存）
+    // 政策列表 API（读 KV 秒出，缺失/过期则现场抓取兜底）
     if (url.pathname === '/api/policies') {
-      const cache = caches.default;
-      const cacheKey = new Request(url.origin + '/__policies__', { method: 'GET' });
-      const hit = await cache.match(cacheKey);
-      if (hit) return hit; // 缓存命中直接返回（headers 已在 put 时带 Cache-Control）
+      const cached = await readKV(env);
+      if (isFresh(cached)) return json(cached);
       const data = await fetchAll();
-      const resp = json(data);
-      resp.headers.set('Cache-Control', 'public, max-age=3600');
-      ctx.waitUntil(cache.put(cacheKey, resp.clone()));
-      return resp;
+      ctx.waitUntil(writeKV(env, data));
+      return json(data);
     }
 
-    // 手动刷新（刷新缓存）
+    // 手动刷新（强制重新抓取 → 写 KV）
     if (url.pathname === '/api/refresh') {
       const data = await fetchAll();
-      const cache = caches.default;
-      const cacheKey = new Request(url.origin + '/__policies__', { method: 'GET' });
-      const resp = json(data);
-      resp.headers.set('Cache-Control', 'public, max-age=3600');
-      await cache.put(cacheKey, resp.clone());
+      await writeKV(env, data);
       return json({ ok: true, total: data.total, preferenceCount: data.preferenceCount, source: data.source, updatedAt: data.updatedAt, errors: data.errors });
     }
 
