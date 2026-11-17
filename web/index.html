@@ -201,6 +201,8 @@
     }
     .vat-key a { color: #c2410c; font-weight: 600; }
     .tag.stopped { background: #f3f4f6; color: #9ca3af; text-decoration: line-through; }
+    .tag.st-valid { background: var(--green-bg); color: var(--green); }
+    .tag.st-warn { background: #fff7ed; color: #c2410c; }
   </style>
 </head>
 <body>
@@ -218,6 +220,7 @@
   <div class="tabs">
     <div class="tab on" id="tabPolicy">政策库</div>
     <div class="tab" id="tabVat">增值税衔接表</div>
+    <div class="tab" id="tabCit">所得税到期地图</div>
   </div>
 
   <div id="policyView">
@@ -247,6 +250,13 @@
     <div class="filters" id="vatGroupFilters"></div>
     <div class="stats" id="vatStats">正在加载…</div>
     <div class="list" id="vatList"></div>
+  </div>
+
+  <div id="citView" style="display:none">
+    <div class="vat-key" id="citKey"></div>
+    <div class="filters" id="citGroupFilters"></div>
+    <div class="stats" id="citStats">正在加载…</div>
+    <div class="list" id="citList"></div>
   </div>
 
   <div class="footer">

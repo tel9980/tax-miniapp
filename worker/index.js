@@ -8,6 +8,7 @@
 
 // ===== 栏目配置：官方「政策法规库」各栏目的 channelId（UUID，从各列表页 HTML 提取）=====
 import { VAT_LAW, VAT_GROUPS, VAT_CONTINUITY, withUrl } from './vatContinuity.js';
+import { CIT_LAW, CIT_GROUPS, CIT_CONTINUITY, citWithUrl } from './citContinuity.js';
 
 const COLUMNS = [
   { code: 'c102416', name: '财税文件',         channelId: '2cb303fdee614232b79552d52bb057d6' },
@@ -545,6 +546,17 @@ export default {
         groups: VAT_GROUPS,
         items: withUrl(VAT_CONTINUITY),
         total: VAT_CONTINUITY.length,
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    // 企业所得税「到期地图」（静态数据，无需抓取）
+    if (url.pathname === '/api/cit-continuity') {
+      return json({
+        law: CIT_LAW,
+        groups: CIT_GROUPS,
+        items: citWithUrl(CIT_CONTINUITY),
+        total: CIT_CONTINUITY.length,
         updatedAt: new Date().toISOString(),
       });
     }
