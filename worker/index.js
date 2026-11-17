@@ -389,16 +389,79 @@ async function fetchRegionalByKeyword(item) {
     label: '文字政策解读,法律,行政法规及国务院文件,税务部门规章,税务规范性文件,财税文件,其他文件',
     searchSiteName: 'GSFFK',
   });
-  const res = await fetch('https://www.chinatax.gov.cn/search5/search/s?' + p.toString(), {
+  const url = 'https://www.chinatax.gov.cn/search5/search/s?' + p.toString();
+  const opts = {
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
       'Referer': 'https://fgk.chinatax.gov.cn/zcfgk/',
     },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const j = await res.json();
+  };
+  // 搜索接口偶发限流（返回 HTML 而非 JSON），失败等 800ms 重试一次
+  let j = null;
+  for (let attempt = 0; attempt < 2 && !j; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 800));
+    try {
+      const res = await fetch(url, opts);
+      if (res.ok) j = await res.json();
+    } catch {
+      // 网络异常，下一轮重试
+    }
+  }
+  if (!j) throw new Error('搜索接口连续失败');
   const list = j?.searchResultAll?.searchTotal || [];
   return list.map((it) => parseSearchRecord(it, item.area)).filter(Boolean);
+}
+
+// 抓取总局法规库详情页正文首段，生成简短「一句话看懂」摘要（无 AI，取正文开头的通知主旨）
+async function fetchSummary(url) {
+  try {
+    if (!url) return '';
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+    });
+    if (!res.ok) return '';
+    const html = await res.text();
+    // 正文容器：总局法规库 class="article"，广东省局 id="zoomcon"（fallback class="content"）
+    let anchor = -1;
+    for (const key of ['class="article"', 'id="zoomcon"', 'class="content"']) {
+      const i = html.indexOf(key);
+      if (i >= 0) { anchor = i; break; }
+    }
+    if (anchor < 0) return '';
+    let text = html
+      .slice(anchor, anchor + 5000)
+      .replace(/<script[\s\S]*?<\/script>/g, ' ')
+      .replace(/<style[\s\S]*?<\/style>/g, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;|&#160;|&ensp;/g, ' ')
+      .replace(/&ldquo;|&rdquo;|&quot;/g, '"')
+      .replace(/&middot;/g, '·')
+      .replace(/&mdash;|&ndash;/g, '—')
+      .replace(/&lt;|&gt;/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    // 跳过开头的「注释」和收件单位等套话，从「现就/现将/通知如下/公告如下」开始
+    const m = text.search(/现就|现将|通知如下|公告如下|规定如下/);
+    if (m >= 0) text = text.slice(m);
+    // 截断正文后的附加区块（广东页含「政策解读/相关政策文件/扫一扫」等链接区）
+    const cut = text.search(/政策解读|相关政策文件|扫一扫|回到顶部|回到 顶部/);
+    if (cut > 20) text = text.slice(0, cut).trim();
+    if (!text) return '';
+    return text.length > 160 ? text.slice(0, 160).replace(/\s+$/, '') + '…' : text;
+  } catch {
+    return '';
+  }
+}
+
+// 基于元数据生成模板摘要（零子请求、零额外抓取，用于兜底没抓到正文的优惠政策）
+function templatePlain(p) {
+  const parts = [];
+  if (p.prefType) parts.push(p.prefType);
+  if (p.taxTypes && p.taxTypes.length) parts.push(p.taxTypes.join('、'));
+  if (p.area) parts.push(`${p.area}区域`);
+  if (p.expiry) parts.push(`执行至${p.expiry}`);
+  const body = parts.length ? parts.join('，') : '税收优惠';
+  return `${body}。具体条件与操作以原文为准。`;
 }
 
 // 抓取单个栏目
@@ -435,9 +498,17 @@ async function fetchAll() {
     GD_COLUMNS.map((col) => fetchGuangdongColumn(col).then((items) => items.map((it) => parseGdRecord(it))))
   );
   // 区域优惠（总局全文搜索接口，按横琴/前海/南沙/大湾区/河套关键词补充最新政策）
-  const regionalResults = await Promise.allSettled(
-    REGIONAL_KEYWORDS.map((item) => fetchRegionalByKeyword(item))
-  );
+  // 串行 + 间隔，避免 5 个搜索请求并发触发总局接口反爬限流
+  const regionalResults = [];
+  for (const item of REGIONAL_KEYWORDS) {
+    regionalResults.push(
+      await fetchRegionalByKeyword(item).then(
+        (value) => ({ status: 'fulfilled', value }),
+        (reason) => ({ status: 'rejected', reason })
+      )
+    );
+    await new Promise((r) => setTimeout(r, 400));
+  }
 
   const all = [];
   const errors = [];
@@ -476,6 +547,26 @@ async function fetchAll() {
     delete p.industry;
     return p;
   });
+
+  // 给动态抓取、尚无「一句话看懂」的优惠政策补摘要：
+  // 最新 10 条实质优惠抓详情页正文首段（真摘要），其余用模板摘要兜底。
+  // 原因：CF Worker 免费计划 CPU 约 10ms，批量抓 60+ 详情页会超 CPU 被中断；
+  // 同时排除「文库/目录/第N批/办理进度」等技术性通知（摘要价值低，模板兜底即可）
+  const TECH_NOISE = /文库|目录|第.{1,3}批|办理进度|打击骗取|进一步加大出口退税|落实落细|便民办税/;
+  const needSummary = list
+    .filter((p) => p.isPreference && !p.plain && p.url && !p.url.includes('/wzjd/'));
+  // 实质优惠（非技术性通知）前 10 条抓正文真摘要，其余（含技术性通知）用模板摘要兜底
+  const detailBatch = needSummary.filter((p) => !TECH_NOISE.test(p.title)).slice(0, 10);
+  const templateBatch = needSummary.filter((p) => !detailBatch.includes(p));
+  if (detailBatch.length) {
+    const settled = await Promise.allSettled(detailBatch.map((p) => fetchSummary(p.url)));
+    detailBatch.forEach((p, j) => {
+      const v = settled[j];
+      p.plain = v.status === 'fulfilled' && v.value ? v.value : templatePlain(p);
+    });
+  }
+  for (const p of templateBatch) p.plain = templatePlain(p);
+
   // 《增值税法》2026-01-01 施行后，此前制发的国内环节增值税优惠政策原则上停止执行
   // 对这类历史增值税文件打中性提示标记，避免用户误当现行有效规定
   for (const p of list) {
