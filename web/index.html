@@ -129,6 +129,7 @@
       color: var(--primary);
     }
     .tag.pref { background: var(--green-bg); color: var(--green); }
+    .tag.region { background: #fdf4ff; color: #a21caf; }
     .tag.lv { background: #f3f4f6; color: var(--muted); }
     .item .sub {
       margin-top: 7px;
@@ -161,7 +162,7 @@
 <body>
   <div class="header">
     <h1>税优政策库</h1>
-    <div class="sub">最新税收优惠政策 · 自动抓取国家税务总局政策法规库</div>
+    <div class="sub">最新税收优惠政策 · 全国 + 广东 · 自动抓取官方政策库</div>
     <span class="badge" id="badge">加载中…</span>
   </div>
 
@@ -173,6 +174,7 @@
     </div>
   </div>
 
+  <div class="filters" id="regionFilters"></div>
   <div class="filters" id="prefFilters">
     <div class="chip pref on" id="prefToggle">只看优惠</div>
   </div>
@@ -183,7 +185,7 @@
   <div class="list" id="list"></div>
 
   <div class="footer">
-    数据来源：国家税务总局政策法规库（fgk.chinatax.gov.cn），自动抓取、约每小时更新。<br>
+    数据来源：国家税务总局政策法规库 + 广东省税务局官网，自动抓取、每天更新。<br>
     「优惠」标签为系统关键词判定，请以<a href="https://fgk.chinatax.gov.cn/" target="_blank" rel="noopener">官方原文</a>为准。<br>
     本平台仅供政策浏览与知识普及，不构成税务建议。
   </div>

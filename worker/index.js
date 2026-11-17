@@ -1,10 +1,10 @@
 // 税优政策库 Worker
-// 职责：抓取国家税务总局政策法规库 → 结构化 → 优惠判定 → 持久化到 KV → 返回 API
-// 数据源：https://fgk.chinatax.gov.cn （官方政策法规库）
-// 同步机制（免费计划无 cron 配额，用惰性刷新）：
-//   1) 用户访问时读 KV 秒出；KV 缺失/超过 1 小时则现场抓取并写回 KV（官方发新政策后，
-//      下一次打开页面即自动同步）
-//   2) /api/refresh 手动强制刷新
+// 职责：抓取国家税务总局 + 广东省税务局政策 → 结构化 → 优惠判定 → 持久化到 KV → 返回 API
+// 数据源：https://fgk.chinatax.gov.cn （全国）、https://guangdong.chinatax.gov.cn （广东）
+// 同步机制：
+//   1) cron 每天定时抓取（wrangler.toml [triggers]）
+//   2) 用户访问时读 KV 秒出；KV 缺失/超过 1 小时则现场抓取兜底
+//   3) /api/refresh 手动强制刷新
 
 // ===== 栏目配置：官方「政策法规库」各栏目的 channelId（UUID，从各列表页 HTML 提取）=====
 const COLUMNS = [
@@ -16,6 +16,12 @@ const COLUMNS = [
   { code: 'c102440', name: '国务院文件',       channelId: 'fa1726b47078490fa0a4522194185e8d' },
   { code: 'c100013', name: '其他文件',         channelId: '4c1a5be62f6d44d48f386f630dcebbc5' },
   { code: 'c102424', name: '工作通知',         channelId: '7778c3a40a344de3a36ca88a2548f5f8' },
+];
+
+// ===== 广东省税务局政策栏目（列表为服务端渲染 HTML，直接解析 <ul class="infoList fileList">）=====
+const GD_COLUMNS = [
+  { path: '/gdsw/zcwj/zcwj.shtml', name: '广东·政策文件' },
+  { path: '/gdsw/zxwj/zxwj.shtml', name: '广东·最新文件' },
 ];
 
 // 每栏目抓取的最新条数（政策浏览只需要「最新」，抓 50 条足够覆盖近 1-2 年）
@@ -152,6 +158,61 @@ function parseRecord(rec, columnName) {
     isPreference: isPref,
     prefType,
     column: columnName,
+    region: '全国',
+  };
+}
+
+// ===== 广东税务局：抓取 + 解析（服务端渲染，直接解析 HTML 列表）=====
+async function fetchGuangdongColumn(col) {
+  const res = await fetch('https://guangdong.chinatax.gov.cn' + col.path, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const html = await res.text();
+  const items = [];
+  const re = /<li[^>]*>\s*<h4>\s*<a href="([^"]+)"(?:\s+title="([^"]*)")?[^>]*>([\s\S]*?)<\/a>\s*<span class="time">([^<]+)<\/span>\s*<\/h4>\s*<\/li>/g;
+  let m;
+  while ((m = re.exec(html))) {
+    const href = m[1], titleAttr = m[2], inner = m[3], date = (m[4] || '').trim().replace(/[\[\]\s]/g, '');
+    const fm = /<font>([\s\S]*?)<\/font>/.exec(inner);
+    const title = (fm ? fm[1] : (titleAttr || inner)).replace(/<[^>]+>/g, '').trim();
+    if (!title || !href || !href.includes('content_')) continue;
+    items.push({ title, date, url: 'https://guangdong.chinatax.gov.cn' + href, column: col.name });
+  }
+  return items;
+}
+
+function parseGdRecord(item) {
+  const text = item.title || '';
+  const isPref = PREF_KEYWORDS.some((k) => text.includes(k));
+  let prefType = '';
+  if (isPref) {
+    for (const [type, keys] of PREF_TYPE_RULES) {
+      if (keys.some((k) => text.includes(k))) { prefType = type; break; }
+    }
+    if (!prefType) prefType = '其他优惠';
+  }
+  const hits = new Set();
+  for (const [tax, keys] of TAX_TYPE_MAP) {
+    if (keys.some((k) => text.includes(k))) hits.add(tax);
+  }
+  let h = 0;
+  const s = item.url || item.title || '';
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return {
+    id: 'gd-' + h.toString(36),
+    title: text,
+    docNo: '',
+    date: item.date || '',
+    url: item.url || '',
+    taxTypes: hits.size ? [...hits] : ['其他'],
+    industry: '',
+    effectLevel: item.column || '广东',
+    department: '广东省税务局',
+    isPreference: isPref,
+    prefType,
+    column: item.column || '广东',
+    region: '广东',
   };
 }
 
@@ -178,16 +239,26 @@ async function fetchColumn(channelId, size) {
   return data?.results?.data?.results || [];
 }
 
-// 抓取全部栏目（并行）→ 结构化 → 去重 → 排序
+// 抓取全部（全国 + 广东，并行）→ 结构化 → 去重 → 排序
 async function fetchAll() {
+  // 全国（总局 fgk 接口）
   const results = await Promise.allSettled(
     COLUMNS.map((col) => fetchColumn(col.channelId, PER_COLUMN).then((recs) => recs.map((r) => parseRecord(r, col.name))))
   );
+  // 广东（省局 HTML）
+  const gdResults = await Promise.allSettled(
+    GD_COLUMNS.map((col) => fetchGuangdongColumn(col).then((items) => items.map((it) => parseGdRecord(it))))
+  );
+
   const all = [];
   const errors = [];
   results.forEach((r, i) => {
     if (r.status === 'fulfilled') all.push(...r.value);
     else errors.push(`${COLUMNS[i].name}: ${r.reason?.message || r.reason}`);
+  });
+  gdResults.forEach((r, i) => {
+    if (r.status === 'fulfilled') all.push(...r.value);
+    else errors.push(`${GD_COLUMNS[i].name}: ${r.reason?.message || r.reason}`);
   });
 
   const seen = new Set();
@@ -201,11 +272,15 @@ async function fetchAll() {
   const clean = dedup.filter((p) => p.title && p.url);
 
   const list = clean.length ? clean : SEED_POLICIES;
+  const hasNational = clean.some((p) => p.region === '全国');
+  const hasGd = clean.some((p) => p.region === '广东');
   return {
     items: list,
     total: list.length,
     preferenceCount: list.filter((p) => p.isPreference).length,
+    gdCount: list.filter((p) => p.region === '广东').length,
     source: clean.length ? 'chinatax' : 'seed',
+    regions: [hasNational && '全国', hasGd && '广东'].filter(Boolean),
     updatedAt: new Date().toISOString(),
     errors,
     version: 'auto',
@@ -237,6 +312,13 @@ function isFresh(data) {
 
 // ===== Worker 入口 =====
 export default {
+  // cron 定时任务：每天抓取最新政策 → 写 KV（配合 wrangler.toml [triggers]）
+  async scheduled(event, env, ctx) {
+    const data = await fetchAll();
+    await writeKV(env, data);
+    console.log(`[scheduled] 更新完成：${data.total} 条，优惠 ${data.preferenceCount} 条，广东 ${data.gdCount} 条`);
+  },
+
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
@@ -253,7 +335,7 @@ export default {
     if (url.pathname === '/api/refresh') {
       const data = await fetchAll();
       await writeKV(env, data);
-      return json({ ok: true, total: data.total, preferenceCount: data.preferenceCount, source: data.source, updatedAt: data.updatedAt, errors: data.errors });
+      return json({ ok: true, total: data.total, preferenceCount: data.preferenceCount, gdCount: data.gdCount, source: data.source, updatedAt: data.updatedAt, errors: data.errors });
     }
 
     // 其余请求交给静态资产（web/）

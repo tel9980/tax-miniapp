@@ -18,5 +18,9 @@ custom_domain = true
 binding = "POLICIES"
 id = "853d9ddc1d7844169f13d085af2290a2"
 
+# 定时抓取：每天 UTC 01:00（北京时间 09:00）自动抓取最新政策写 KV
+[triggers]
+crons = ["0 1 * * *"]
+
 [observability]
 enabled = true
