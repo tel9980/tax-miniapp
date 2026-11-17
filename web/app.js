@@ -13,7 +13,7 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 let policies = [];
-const state = { q: '', tax: '全部', type: '全部', region: '全部', prefOnly: true };
+const state = { q: '', tax: '全部', type: '全部', region: '全部', area: '全部', prefOnly: true };
 
 // ===== 加载 =====
 async function load() {
@@ -28,6 +28,7 @@ async function load() {
     updateBadge({ source: '内置兜底', total: FALLBACK.length, preferenceCount: FALLBACK.length, updatedAt: null });
   }
   buildRegionChips();
+  buildAreaChips();
   buildTypeChips();
   buildTaxChips();
   render();
@@ -55,6 +56,26 @@ function buildRegionChips() {
     c.addEventListener('click', () => {
       state.region = r;
       holder.querySelectorAll('.chip').forEach((x) => x.classList.toggle('active', x.textContent === r));
+      render();
+    });
+    holder.appendChild(c);
+  });
+}
+
+function buildAreaChips() {
+  const areas = new Set();
+  policies.forEach((p) => { if (p.area) areas.add(p.area); });
+  const holder = $('areaFilters');
+  if (!areas.size) { holder.style.display = 'none'; return; }
+  holder.style.display = 'flex';
+  holder.innerHTML = '';
+  ['全部', ...areas].forEach((a) => {
+    const c = document.createElement('div');
+    c.className = 'chip' + (a === '全部' ? ' active' : '');
+    c.textContent = a;
+    c.addEventListener('click', () => {
+      state.area = a;
+      holder.querySelectorAll('.chip').forEach((x) => x.classList.toggle('active', x.textContent === a));
       render();
     });
     holder.appendChild(c);
@@ -106,6 +127,7 @@ function render() {
   const filtered = policies.filter((p) => {
     if (state.prefOnly && !p.isPreference) return false;
     if (state.region !== '全部' && p.region !== state.region) return false;
+    if (state.area !== '全部' && p.area !== state.area) return false;
     if (state.tax !== '全部' && !(p.taxTypes || []).includes(state.tax)) return false;
     if (state.type !== '全部' && p.prefType !== state.type) return false;
     if (q && !`${p.title} ${p.docNo}`.toLowerCase().includes(q)) return false;
@@ -124,13 +146,14 @@ function render() {
     const taxTags = (p.taxTypes || []).slice(0, 3).map((t) => `<span class="tag">${esc(t)}</span>`).join('');
     const prefTag = p.isPreference && p.prefType ? `<span class="tag pref">${esc(p.prefType)}</span>` : '';
     const regionTag = p.region ? `<span class="tag region">${esc(p.region)}</span>` : '';
+    const areaTag = p.area ? `<span class="tag area">${esc(p.area)}</span>` : '';
     const lvTag = p.effectLevel ? `<span class="tag lv">${esc(p.effectLevel)}</span>` : '';
     const docDate = [p.docNo, p.date].filter(Boolean).join(' · ');
     const dept = p.department ? esc(p.department) : esc(p.column || '');
     return `
       <a class="item" href="${esc(p.url || 'https://fgk.chinatax.gov.cn/')}" target="_blank" rel="noopener">
         <div class="title">${esc(p.title)}</div>
-        <div class="meta">${regionTag}${prefTag}${taxTags}${lvTag}</div>
+        <div class="meta">${regionTag}${areaTag}${prefTag}${taxTags}${lvTag}</div>
         <div class="sub"><span>${esc(docDate)}</span><span>${dept} <span class="arrow">›</span></span></div>
       </a>`;
   }).join('');
