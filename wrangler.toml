@@ -1,13 +1,14 @@
 name = "tax-miniapp"
+main = "worker/index.js"
 compatibility_date = "2025-09-01"
 
-# 纯静态站点：Workers Static Assets 直接托管 web/，没有 Worker 代码、没有数据库
-# （对齐 cf-finance-calc 的架构：政策从 jsDelivr/GitHub 直连同步，浏览器无备案限制）
+# Worker 静态资源：web/ 由 Worker 通过 env.ASSETS 服务（首页走 Worker 逻辑，静态文件自动回源）
 [assets]
 directory = "./web"
+binding = "ASSETS"
 not_found_handling = "single-page-application"
 
-# 自定义域名：部署时自动在 1211.cc.cd 下建 te 子域并签发证书
+# 自定义域名：te.1211.cc.cd
 [[routes]]
 pattern = "te.1211.cc.cd"
 custom_domain = true
