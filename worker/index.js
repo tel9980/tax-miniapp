@@ -37,6 +37,9 @@ const PREF_KEYWORDS = [
   '优惠', '零税率', '税收返还',
 ];
 
+// 否定词：标题含这些词说明是「废止/取消/停止」类文件，不是优惠本身，需排除
+const NEG_KEYWORDS = ['废止', '取消', '失效', '作废', '撤销', '不再执行', '不再实施', '停止执行', '终止执行'];
+
 // 优惠类型 → 关键词
 const PREF_TYPE_RULES = [
   ['免税', ['免征', '免税', '零税率']],
@@ -146,7 +149,7 @@ function classifyTaxTypes(rec, meta) {
 // 判定是否「税收优惠」+ 优惠类型
 function classifyPreference(rec, meta) {
   const text = `${rec.title || ''} ${meta.writtentext || ''} ${meta.taxpolicy || ''} ${meta.labels || ''}`;
-  const isPref = PREF_KEYWORDS.some((k) => text.includes(k));
+  const isPref = !NEG_KEYWORDS.some((k) => text.includes(k)) && PREF_KEYWORDS.some((k) => text.includes(k));
   let prefType = '';
   if (isPref) {
     for (const [type, keys] of PREF_TYPE_RULES) {
@@ -284,7 +287,7 @@ async function fetchGuangdongColumn(col) {
 
 function parseGdRecord(item) {
   const text = item.title || '';
-  const isPref = PREF_KEYWORDS.some((k) => text.includes(k));
+  const isPref = !NEG_KEYWORDS.some((k) => text.includes(k)) && PREF_KEYWORDS.some((k) => text.includes(k));
   let prefType = '';
   if (isPref) {
     for (const [type, keys] of PREF_TYPE_RULES) {
@@ -327,7 +330,7 @@ function parseSearchRecord(item, area) {
   const taxDiscount = Array.isArray(item.xxgk_taxDiscount) ? item.xxgk_taxDiscount.join(',') : (item.xxgk_taxDiscount || '');
   const taxPolicy = Array.isArray(item.xxgk_taxPolicy) ? item.xxgk_taxPolicy.join(',') : (item.xxgk_taxPolicy || '');
   const text = `${title} ${taxDiscount} ${taxPolicy}`;
-  const isPref = PREF_KEYWORDS.some((k) => text.includes(k)) || !!taxDiscount;
+  const isPref = !NEG_KEYWORDS.some((k) => text.includes(k)) && (PREF_KEYWORDS.some((k) => text.includes(k)) || !!taxDiscount);
   let prefType = '';
   if (isPref) {
     for (const [type, keys] of PREF_TYPE_RULES) {
