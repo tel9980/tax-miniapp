@@ -2,9 +2,8 @@
 // 复用小程序版算法，政策数据从 GitHub 自动同步（浏览器无备案限制，可直连）
 
 // ==================== 政策数据加载（自动同步）====================
-// 政策源优先级：同域 CF Pages Function（/api/policy，最稳）→ jsDelivr → GitHub raw → 内置兜底
+// 政策源优先级：jsDelivr → GitHub raw → 内置兜底（纯静态部署无后端，两个 CDN 均支持 CORS）
 const POLICY_SOURCES = [
-  '/api/policy',
   'https://cdn.jsdelivr.net/gh/tel9980/tax-miniapp@main/data/policies.json',
   'https://raw.githubusercontent.com/tel9980/tax-miniapp/main/data/policies.json'
 ];
