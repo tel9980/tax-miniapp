@@ -469,7 +469,13 @@ async function fetchAll() {
   dedup.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   const clean = dedup.filter((p) => p.title && p.url);
 
-  const list = clean;
+  // 字段瘦身：不传输前端用不到的字段；summary 并入 plain（plain 优先，避免两份摘要重复传输）
+  const list = clean.map((p) => {
+    if (!p.plain && p.summary) p.plain = p.summary;
+    delete p.summary;
+    delete p.industry;
+    return p;
+  });
   // 《增值税法》2026-01-01 施行后，此前制发的国内环节增值税优惠政策原则上停止执行
   // 对这类历史增值税文件打中性提示标记，避免用户误当现行有效规定
   for (const p of list) {
