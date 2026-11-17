@@ -127,6 +127,14 @@ function genId(rec) {
   return 'h' + h.toString(36);
 }
 
+// 规范化原文链接：http→https，且政策法规库的 /zcfgk/ 路径域名从 www 换成 fgk
+// （www.chinatax.gov.cn/zcfgk/... 是 404，正确域名是 fgk.chinatax.gov.cn）
+function normalizeUrl(u) {
+  u = (u || '').replace(/^http:\/\//, 'https://');
+  u = u.replace(/^https:\/\/www\.chinatax\.gov\.cn\/zcfgk\//, 'https://fgk.chinatax.gov.cn/zcfgk/');
+  return u;
+}
+
 // 解析单条原始记录 → 政策条目
 function parseRecord(rec, columnName) {
   const meta = extractMeta(rec);
@@ -136,7 +144,7 @@ function parseRecord(rec, columnName) {
     title: (rec.title || '').trim(),
     docNo: meta.writtentext || '',
     date: meta.writtendate || (rec.publishedTimeStr || '').slice(0, 10),
-    url: (rec.url || '').replace(/^http:\/\//, 'https://'),
+    url: normalizeUrl(rec.url || ''),
     taxTypes: classifyTaxTypes(rec, meta),
     industry: meta.industrytypename || '',
     effectLevel: meta.effectlevel || columnName,
