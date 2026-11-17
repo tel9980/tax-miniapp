@@ -211,7 +211,7 @@ $('clearBtn').addEventListener('click', () => {
 const STATUS_META = {
   '长期有效': { cls: 'st-valid', label: (x) => '长期有效' },
   '继续有效': { cls: 'st-valid', label: (x) => (x.until === '长期' ? '长期有效' : '有效至 ' + x.until) },
-  '待核实':   { cls: 'st-warn',  label: () => '待核实' },
+  '待核实':   { cls: 'st-warn',  label: () => '⚠️ 待核实 · 需人工确认' },
   '已停止':   { cls: 'stopped',  label: (x) => '已停止 ' + x.until },
   '已到期':   { cls: 'stopped',  label: (x) => '已到期 ' + x.until },
 };
@@ -263,20 +263,21 @@ function makeContinuity(cfg) {
     const okN = data.items.filter((x) => x.status === '继续有效' || x.status === '长期有效').length;
     const badN = data.items.filter((x) => x.status === '已停止' || x.status === '已到期').length;
     const waitN = data.items.filter((x) => x.status === '待核实').length;
-    $(cfg.statsId).textContent =
+    $(cfg.statsId).innerHTML =
       '共 ' + data.items.length + ' 项 · 有效 ' + okN + ' 项' +
       (badN ? ' · 已失效 ' + badN + ' 项' : '') +
-      (waitN ? ' · 待核实 ' + waitN + ' 项' : '') +
-      '（当前显示 ' + items.length + ' 项）';
+      '（当前显示 ' + items.length + ' 项）' +
+      (waitN ? ' <span class="wait-pill">⚠️ 待核实 ' + waitN + ' 项，需打 12366 确认</span>' : '');
 
     $(cfg.listId).innerHTML = items.map((x) => {
       const meta = STATUS_META[x.status] || STATUS_META['继续有效'];
+      const isWait = x.status === '待核实';
       const untilTag = '<span class="tag ' + meta.cls + '">' + esc(meta.label(x)) + '</span>';
       const docTag = x.docNo ? '<span class="tag lv">' + esc(x.docNo) + '</span>' : '';
       const basisTag = '<span class="tag lv">' + esc(x.basis) + '</span>';
       return `
-      <a class="item" href="${esc(x.url)}" target="_blank" rel="noopener">
-        <div class="title">${esc(x.title)}</div>
+      <a class="item${isWait ? ' warn' : ''}" href="${esc(x.url)}" target="_blank" rel="noopener">
+        <div class="title">${isWait ? '⚠️ ' : ''}${esc(x.title)}</div>
         <div class="summary">${esc(x.plain || '')}</div>
         <div class="meta">${untilTag}${docTag}${basisTag}</div>
       </a>`;
