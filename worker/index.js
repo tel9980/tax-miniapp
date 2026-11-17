@@ -69,7 +69,8 @@ const TAX_TYPE_MAP = [
 
 // 内置高频核心优惠政策（全国），始终并入——用户搜索量最大、且不在「最新50条」抓取范围
 const SEED_POLICIES = [
-  { id: 'seed-vat-small', title: '小规模纳税人免征增值税（月销售额10万元以下）', docNo: '财政部 税务总局公告2023年第19号', date: '2023-08-01', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5210457/content.html', taxTypes: ['增值税'], industry: '社会民生', effectLevel: '财税文件', department: '财政部,国家税务总局', isPreference: true, prefType: '免税', column: '高频核心', region: '全国', plain: '小老板月销售额10万以内（季度30万以内），增值税一分钱不用交。执行到2027年底。' },
+  { id: 'seed-vat-small', title: '增值税小规模纳税人起征点：月销售额10万元（季度30万元）以下不征增值税', docNo: '财政部 税务总局公告2026年第10号', date: '2026-01-30', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5247434/content.html', taxTypes: ['增值税'], industry: '社会民生', effectLevel: '财税文件', department: '财政部,国家税务总局', isPreference: true, prefType: '免税', column: '高频核心', region: '全国', plain: '小老板月销售额10万以内（季度30万以内）不用交增值税；按次纳税的每次（日）1000元以内也不用交。这是2026年增值税法施行后的新起征点，执行到2027年底。', summary: '《增值税法》2026年1月1日施行后，小规模纳税人起征点：按月计税的月销售额10万元、按季计税的季度销售额30万元、按次纳税的每次（日）销售额1000元。执行期间2026年1月1日至2027年12月31日。' },
+  { id: 'seed-vat-1pct', title: '小规模纳税人适用3%征收率的应税交易减按1%征收率征收增值税', docNo: '财政部 税务总局公告2026年第10号', date: '2026-01-30', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5247434/content.html', taxTypes: ['增值税'], industry: '社会民生', effectLevel: '财税文件', department: '财政部,国家税务总局', isPreference: true, prefType: '减税', column: '高频核心', region: '全国', plain: '小规模纳税人（不含卖房、出租不动产、转让土地使用权）本来要按3%交增值税，现在只按1%交，等于税率打了三折。执行到2027年底。', summary: '自2026年1月1日至2027年12月31日，小规模纳税人发生除销售、出租不动产或者转让土地使用权之外的增值税应税交易，依照3%征收率减按1%征收率征收增值税。' },
   { id: 'seed-sme', title: '小型微利企业减按25%计入应纳税所得额，按20%税率缴纳企业所得税（实际税负5%）', docNo: '财政部 税务总局公告2023年第12号', date: '2023-08-02', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5210453/content.html', taxTypes: ['企业所得税'], industry: '社会民生', effectLevel: '财税文件', department: '财政部,国家税务总局', isPreference: true, prefType: '减税', column: '高频核心', region: '全国', plain: '年利润300万以内的小微企业，企业所得税只按5%交（正常是25%，省了八成）。执行到2027年底。' },
   { id: 'seed-six', title: '增值税小规模纳税人、小型微利企业和个体工商户减半征收"六税两费"', docNo: '财政部 税务总局公告2023年第12号', date: '2023-08-02', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5210453/content.html', taxTypes: ['其他'], industry: '社会民生', effectLevel: '财税文件', department: '财政部,国家税务总局', isPreference: true, prefType: '减税', column: '高频核心', region: '全国', plain: '小规模纳税人、小微企业、个体户的房产税、城建税、印花税等6种税+教育费附加，全部减半交。执行到2027年底。' },
   { id: 'seed-ger', title: '个体工商户年应纳税所得额不超过200万元的部分减半征收个人所得税', docNo: '财政部 税务总局公告2023年第12号', date: '2023-08-02', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5210453/content.html', taxTypes: ['个人所得税'], industry: '社会民生', effectLevel: '财税文件', department: '财政部,国家税务总局', isPreference: true, prefType: '减税', column: '高频核心', region: '全国', plain: '个体户一年赚的钱（应纳税所得额）200万以内，个人所得税减半交。执行到2027年底。' },
@@ -78,7 +79,7 @@ const SEED_POLICIES = [
   { id: 'seed-nev', title: '新能源汽车车辆购置税减免', docNo: '财政部 税务总局 工业和信息化部公告2023年第10号', date: '2023-06-19', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5207352/content.html', taxTypes: ['车辆购置税'], industry: '社会民生', effectLevel: '财税文件', department: '财政部,国家税务总局,工业和信息化部', isPreference: true, prefType: '免税', column: '高频核心', region: '全国', plain: '买新能源车：2024-2025年免征购置税，2026-2027年减半征收。每辆车最高能省3万元。' },
   { id: 'seed-deduction', title: '提高个人所得税专项附加扣除标准（子女教育、3岁以下婴幼儿照护、赡养老人）', docNo: '国家税务总局公告2023年第14号', date: '2023-08-30', url: 'https://fgk.chinatax.gov.cn/zcfgk/c100012/c5213592/content.html', taxTypes: ['个人所得税'], industry: '社会民生', effectLevel: '税务规范性文件', department: '国家税务总局', isPreference: true, prefType: '扣除抵免', column: '高频核心', region: '全国', plain: '养娃和养老能少交税：子女教育每孩每月扣2000元（原1000）、3岁以下婴幼儿照护每孩每月扣2000元（原1000）、赡养老人独生子女每月扣3000元（原2000）。从2023年1月起算，长期有效。' },
   { id: 'seed-pension', title: '在全国范围实施个人养老金个人所得税优惠政策', docNo: '财政部 税务总局公告2024年第21号', date: '2024-12-12', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5237110/content.html', taxTypes: ['个人所得税'], industry: '社会民生', effectLevel: '财税文件', department: '财政部,国家税务总局', isPreference: true, prefType: '扣除抵免', column: '高频核心', region: '全国', plain: '自己往个人养老金账户存钱（每年最多12000元），这部分钱当年不用交个税，等退休领钱时再按3%低税率交。长期有效。' },
-  { id: 'seed-disabled', title: '促进残疾人就业增值税优惠政策', docNo: '财税〔2016〕52号', date: '2016-05-05', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5203716/content.html', taxTypes: ['增值税'], industry: '社会民生', effectLevel: '财税文件', department: '财政部,国家税务总局', isPreference: true, prefType: '退税', column: '高频核心', region: '全国', plain: '企业招残疾人上班，可按当地最低工资的4倍退还增值税（每人每月），还免城镇土地使用税。长期有效。' },
+  { id: 'seed-disabled', title: '促进残疾人就业增值税优惠政策', docNo: '财税〔2016〕52号', date: '2016-05-05', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5203716/content.html', taxTypes: ['增值税'], industry: '社会民生', effectLevel: '财税文件', department: '财政部,国家税务总局', isPreference: true, prefType: '退税', column: '高频核心', region: '全国', plain: '【已停止执行】原政策：企业招残疾人上班，可按当地最低工资的4倍退还增值税。因《增值税法》2026年1月1日施行，财政部 税务总局公告2026年第10号明确"2025年12月31日前制发文件规定的国内环节增值税优惠政策同时停止执行"，本文件不在延续清单内，故自2026年起停止执行。', status: '已停止', expiry: '2025-12-31', summary: '原规定：对安置残疾人的单位和个体工商户，按实际安置残疾人数，限额即征即退增值税（每人每月按当地最低工资标准的4倍确定）。注意：2026年1月1日《增值税法》施行后，财政部 税务总局公告2026年第10号规定此前制发的国内环节增值税优惠政策同时停止执行且未列入延续清单，本政策自2026年起已停止执行，如有新规请以官方发布为准。' },
 ];
 
 // ===== 广东区域优惠核心（横琴/前海/南沙/大湾区，财税文件稳定、总局法规库收录不全，硬编码兜底）=====
@@ -106,8 +107,8 @@ const REGIONAL_KEYWORDS = [
 // ===== 高频核心优惠政策有效期对照表（公开确定，标题常不含年份，用关键词补标）=====
 // 这些是用户搜索量最大的政策，有效期稳定（2023 年「延续优化」系列，执行至 2027 年底）
 const EFFECTIVE_UNTIL = [
-  { match: ['小规模纳税人免征增值税'], until: '2027-12-31' },
-  { match: ['增值税小规模纳税人减免增值税'], until: '2027-12-31' },
+  { match: ['增值税小规模纳税人起征点'], until: '2027-12-31' },
+  { match: ['减按1%征收率'], until: '2027-12-31' },
   { match: ['小微企业和个体工商户发展有关税费'], until: '2027-12-31' },
   { match: ['小型微利企业减按25%'], until: '2027-12-31' },
   { match: ['六税两费'], until: '2027-12-31' },
@@ -117,7 +118,6 @@ const EFFECTIVE_UNTIL = [
   { match: ['新能源汽车车辆购置税'], until: '2027-12-31' },
   { match: ['专项附加扣除标准'], until: '长期' },
   { match: ['个人养老金'], until: '长期' },
-  { match: ['促进残疾人就业'], until: '长期' },
 ];
 
 // ===== 工具函数 =====
@@ -229,6 +229,8 @@ function judgeStatus(expiryStr) {
 
 // 合并有效期信息到政策条目
 function withExpiry(rec, text, date) {
+  // seed/内置条目已显式声明状态（如因增值税法施行而停止执行），以声明为准
+  if (rec.status) return rec;
   const { expiry, status } = judgeStatus(parseExpiry(text, date));
   rec.expiry = expiry;
   rec.status = status;
@@ -465,6 +467,13 @@ async function fetchAll() {
   const clean = dedup.filter((p) => p.title && p.url);
 
   const list = clean;
+  // 《增值税法》2026-01-01 施行后，此前制发的国内环节增值税优惠政策原则上停止执行
+  // 对这类历史增值税文件打中性提示标记，避免用户误当现行有效规定
+  for (const p of list) {
+    if ((p.taxTypes || []).includes('增值税') && p.date && p.date < '2026-01-01' && p.status === '未标注') {
+      p.vatPre2026 = true;
+    }
+  }
   const hasNational = list.some((p) => p.region === '全国');
   const hasGd = list.some((p) => p.region === '广东');
   const areas = [...new Set(list.filter((p) => p.area).map((p) => p.area))];

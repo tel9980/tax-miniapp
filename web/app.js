@@ -85,7 +85,7 @@ function buildAreaChips() {
 
 function buildStatusChips() {
   const holder = $('statusFilters');
-  const opts = ['全部', '生效中', '即将到期', '已到期', '已废止'];
+  const opts = ['全部', '生效中', '即将到期', '已到期', '已停止', '已废止'];
   holder.innerHTML = '';
   opts.forEach((s) => {
     const c = document.createElement('div');
@@ -166,10 +166,11 @@ function render() {
     const prefTag = p.isPreference && p.prefType ? `<span class="tag pref">${esc(p.prefType)}</span>` : '';
     const regionTag = p.region ? `<span class="tag region">${esc(p.region)}</span>` : '';
     const areaTag = p.area ? `<span class="tag area">${esc(p.area)}</span>` : '';
-    const stCls = { '生效中': 'st-valid', '即将到期': 'st-soon', '已到期': 'st-expired', '已废止': 'st-revoked' }[p.status] || '';
+    const stCls = { '生效中': 'st-valid', '即将到期': 'st-soon', '已到期': 'st-expired', '已停止': 'st-revoked', '已废止': 'st-revoked' }[p.status] || '';
     const statusTag = (p.status && p.status !== '未标注')
       ? `<span class="tag status ${stCls}">${esc(p.status)}${p.expiry ? ' ' + esc(p.expiry) : ''}</span>` : '';
     const lvTag = p.effectLevel ? `<span class="tag lv">${esc(p.effectLevel)}</span>` : '';
+    const vatTag = p.vatPre2026 ? `<span class="tag vat">2026前·增值税待核实</span>` : '';
     const summary = (p.plain || p.summary) ? `<div class="summary">${esc(p.plain || p.summary)}</div>` : '';
     const hint = p.linkHint ? `<div class="hint">${esc(p.linkHint)}</div>` : '';
     const docDate = [p.docNo, p.date].filter(Boolean).join(' · ');
@@ -179,7 +180,7 @@ function render() {
         <div class="title">${esc(p.title)}</div>
         ${summary}
         ${hint}
-        <div class="meta">${statusTag}${regionTag}${areaTag}${prefTag}${taxTags}${lvTag}</div>
+        <div class="meta">${statusTag}${vatTag}${regionTag}${areaTag}${prefTag}${taxTags}${lvTag}</div>
         <div class="sub"><span>${esc(docDate)}</span><span>${dept} <span class="arrow">›</span></span></div>
       </a>`;
   }).join('');
