@@ -4,14 +4,18 @@
 
 const https = require('https');
 
-// 政策数据源（GitHub 仓库公开 raw 地址）
-const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/tel9980/tax-miniapp/main/data/policies.json';
+// 政策数据源（多源 fallback，国内云函数环境 raw 不稳时自动切 jsDelivr CDN）
+// 数据源头仍是 GitHub 仓库 data/policies.json，jsDelivr 只是它的 CDN 镜像。
+const SOURCES = [
+  'https://raw.githubusercontent.com/tel9980/tax-miniapp/main/data/policies.json',
+  'https://cdn.jsdelivr.net/gh/tel9980/tax-miniapp@main/data/policies.json'
+];
 
-// 简单 GET 请求（支持一次重定向）
+// 简单 GET 请求（支持重定向）
 function fetchJson(url, redirectCount) {
   redirectCount = redirectCount || 0;
   return new Promise((resolve, reject) => {
-    https.get(url, { headers: { 'user-agent': 'tax-miniapp-sync' } }, (res) => {
+    const req = https.get(url, { headers: { 'user-agent': 'tax-miniapp-sync' }, timeout: 8000 }, (res) => {
       // 处理 301/302 重定向
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         res.resume();
@@ -36,14 +40,30 @@ function fetchJson(url, redirectCount) {
           reject(new Error('JSON 解析失败'));
         }
       });
-    }).on('error', reject);
+    });
+    req.on('timeout', () => { req.destroy(new Error('请求超时')); });
+    req.on('error', reject);
   });
+}
+
+// 依次尝试多个数据源，全部失败才返回错误
+async function fetchFromSources() {
+  let lastErr = null;
+  for (const url of SOURCES) {
+    try {
+      return await fetchJson(url);
+    } catch (e) {
+      lastErr = e;
+      // 继续尝试下一个源
+    }
+  }
+  throw lastErr || new Error('所有数据源均失败');
 }
 
 // 云函数入口
 exports.main = async () => {
   try {
-    const raw = await fetchJson(GITHUB_RAW_URL);
+    const raw = await fetchFromSources();
     // 兼容两种结构：{ policy: {...} } 或 直接平铺
     const policyData = raw.policy || raw;
     return {
