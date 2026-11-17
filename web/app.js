@@ -170,7 +170,7 @@ function render() {
     const statusTag = (p.status && p.status !== '未标注')
       ? `<span class="tag status ${stCls}">${esc(p.status)}${p.expiry ? ' ' + esc(p.expiry) : ''}</span>` : '';
     const lvTag = p.effectLevel ? `<span class="tag lv">${esc(p.effectLevel)}</span>` : '';
-    const summary = p.summary ? `<div class="summary">${esc(p.summary)}</div>` : '';
+    const summary = (p.plain || p.summary) ? `<div class="summary">${esc(p.plain || p.summary)}</div>` : '';
     const docDate = [p.docNo, p.date].filter(Boolean).join(' · ');
     const dept = p.department ? esc(p.department) : esc(p.column || '');
     return `
