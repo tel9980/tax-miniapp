@@ -64,12 +64,12 @@ const TAX_TYPE_MAP = [
   ['环境保护税', ['环境保护税', '环保税']],
 ];
 
-// 内置兜底数据（抓取失败时用），保证站点永远有内容
+// 内置高频核心优惠政策（全国），始终并入——用户搜索量最大、且不在「最新50条」抓取范围
 const SEED_POLICIES = [
-  { id: 'seed-vat-small', title: '小规模纳税人免征增值税（月销售额10万元以下）', docNo: '财政部 税务总局公告2023年第19号', date: '2023-08-01', url: 'https://fgk.chinatax.gov.cn/', taxTypes: ['增值税'], industry: '社会民生', effectLevel: '财税文件', department: '财政部,国家税务总局', isPreference: true, prefType: '免税', column: '内置兜底' },
-  { id: 'seed-sme', title: '小型微利企业减按25%计入应纳税所得额，按20%税率缴纳企业所得税', docNo: '财政部 税务总局公告2023年第12号', date: '2023-03-26', url: 'https://fgk.chinatax.gov.cn/', taxTypes: ['企业所得税'], industry: '社会民生', effectLevel: '财税文件', department: '财政部,国家税务总局', isPreference: true, prefType: '减税', column: '内置兜底' },
-  { id: 'seed-rd', title: '研发费用税前加计扣除比例提高至100%', docNo: '财政部 税务总局公告2023年第7号', date: '2023-03-26', url: 'https://fgk.chinatax.gov.cn/', taxTypes: ['企业所得税'], industry: '科技创新', effectLevel: '财税文件', department: '财政部,国家税务总局', isPreference: true, prefType: '扣除抵免', column: '内置兜底' },
-  { id: 'seed-six', title: '增值税小规模纳税人、小型微利企业和个体工商户减半征收"六税两费"', docNo: '财政部 税务总局公告2023年第12号', date: '2023-03-26', url: 'https://fgk.chinatax.gov.cn/', taxTypes: ['其他'], industry: '社会民生', effectLevel: '财税文件', department: '财政部,国家税务总局', isPreference: true, prefType: '减税', column: '内置兜底' },
+  { id: 'seed-vat-small', title: '小规模纳税人免征增值税（月销售额10万元以下）', docNo: '财政部 税务总局公告2023年第19号', date: '2023-08-01', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5210457/content.html', taxTypes: ['增值税'], industry: '社会民生', effectLevel: '财税文件', department: '财政部,国家税务总局', isPreference: true, prefType: '免税', column: '高频核心', region: '全国', summary: '对月销售额10万元以下（含本数）的增值税小规模纳税人免征增值税，执行至2027年12月31日。' },
+  { id: 'seed-sme', title: '小型微利企业减按25%计入应纳税所得额，按20%税率缴纳企业所得税（实际税负5%）', docNo: '财政部 税务总局公告2023年第12号', date: '2023-08-02', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5210453/content.html', taxTypes: ['企业所得税'], industry: '社会民生', effectLevel: '财税文件', department: '财政部,国家税务总局', isPreference: true, prefType: '减税', column: '高频核心', region: '全国', summary: '对小型微利企业减按25%计入应纳税所得额、按20%税率缴纳企业所得税（实际税负5%），执行至2027年12月31日。' },
+  { id: 'seed-rd', title: '研发费用税前加计扣除比例提高至100%', docNo: '财政部 税务总局公告2023年第7号', date: '2023-03-26', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5201978/content.html', taxTypes: ['企业所得税'], industry: '科技创新', effectLevel: '财税文件', department: '财政部,国家税务总局', isPreference: true, prefType: '扣除抵免', column: '高频核心', region: '全国', summary: '企业研发费用未形成无形资产的按实际发生额100%税前加计扣除，形成无形资产的按成本200%税前摊销，作为制度性安排长期实施。' },
+  { id: 'seed-six', title: '增值税小规模纳税人、小型微利企业和个体工商户减半征收"六税两费"', docNo: '财政部 税务总局公告2023年第12号', date: '2023-08-02', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5210453/content.html', taxTypes: ['其他'], industry: '社会民生', effectLevel: '财税文件', department: '财政部,国家税务总局', isPreference: true, prefType: '减税', column: '高频核心', region: '全国', summary: '对增值税小规模纳税人、小型微利企业和个体工商户减半征收资源税、城市维护建设税、房产税、城镇土地使用税、印花税（不含证券交易印花税）、耕地占用税和教育费附加、地方教育附加，执行至2027年12月31日。' },
 ];
 
 // ===== 广东区域优惠核心（横琴/前海/南沙/大湾区，财税文件稳定、总局法规库收录不全，硬编码兜底）=====
@@ -92,6 +92,18 @@ const REGIONAL_KEYWORDS = [
   { kw: '南沙', area: '南沙' },
   { kw: '粤港澳大湾区', area: '大湾区' },
   { kw: '河套深港', area: '河套' },
+];
+
+// ===== 高频核心优惠政策有效期对照表（公开确定，标题常不含年份，用关键词补标）=====
+// 这些是用户搜索量最大的政策，有效期稳定（2023 年「延续优化」系列，执行至 2027 年底）
+const EFFECTIVE_UNTIL = [
+  { match: ['小规模纳税人免征增值税'], until: '2027-12-31' },
+  { match: ['增值税小规模纳税人减免增值税'], until: '2027-12-31' },
+  { match: ['小微企业和个体工商户发展有关税费'], until: '2027-12-31' },
+  { match: ['小型微利企业减按25%'], until: '2027-12-31' },
+  { match: ['六税两费'], until: '2027-12-31' },
+  { match: ['个体工商户年应纳税所得额'], until: '2027-12-31' },
+  { match: ['研发费用税前加计扣除'], until: '长期' },
 ];
 
 // ===== 工具函数 =====
@@ -206,6 +218,16 @@ function withExpiry(rec, text, date) {
   const { expiry, status } = judgeStatus(parseExpiry(text, date));
   rec.expiry = expiry;
   rec.status = status;
+  // 标题没解析出有效期时，用高频核心政策对照表补（仅对确定性高的政策）
+  if (status === '未标注') {
+    for (const e of EFFECTIVE_UNTIL) {
+      if (e.match.some((k) => text.includes(k))) {
+        if (e.until === '长期') { rec.expiry = '长期'; rec.status = '生效中'; }
+        else { const j = judgeStatus(e.until); rec.expiry = j.expiry; rec.status = j.status; }
+        break;
+      }
+    }
+  }
   return rec;
 }
 
@@ -413,9 +435,10 @@ async function fetchAll() {
     else errors.push(`区域-${REGIONAL_KEYWORDS[i].kw}: ${r.reason?.message || r.reason}`);
   });
 
-  // 广东区域优惠核心 seed 始终并入（保证专题一定展示核心政策）
   // 广东区域优惠核心 seed 始终并入（保证专题一定展示核心政策），并补有效期状态
   all.push(...REGIONAL_SEED.map((p) => withExpiry({ ...p }, `${p.title} ${p.summary || ''}`, p.date)));
+  // 全国高频核心优惠 seed 始终并入（用户最关心、且不在「最新50条」抓取范围），并补有效期状态
+  all.push(...SEED_POLICIES.map((p) => withExpiry({ ...p }, `${p.title} ${p.summary || ''}`, p.date)));
 
   const seen = new Set();
   const dedup = [];
@@ -427,7 +450,7 @@ async function fetchAll() {
   dedup.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   const clean = dedup.filter((p) => p.title && p.url);
 
-  const list = clean.length ? clean : SEED_POLICIES;
+  const list = clean;
   const hasNational = list.some((p) => p.region === '全国');
   const hasGd = list.some((p) => p.region === '广东');
   const areas = [...new Set(list.filter((p) => p.area).map((p) => p.area))];
