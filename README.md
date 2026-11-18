@@ -11,7 +11,7 @@
 ## 线上地址
 
 - **网页版**：https://jy.1211.cc.cd
-- **微信小程序**：`miniprogram/`（AppID `wx7b7a501082550565`）
+- **微信小程序**：`miniprogram/`（AppID `wx940d75405673b165`）
 
 ## 功能
 
