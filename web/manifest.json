@@ -1,0 +1,17 @@
+{
+  "name": "税优政策库",
+  "short_name": "税优政策",
+  "description": "最新税收优惠政策浏览：全国 + 广东，横琴/前海/南沙/大湾区专题，增值税、企业所得税、个人所得税三张衔接对照表。",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f6fb",
+  "theme_color": "#2f6fed",
+  "lang": "zh-CN",
+  "categories": ["finance", "business", "productivity"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

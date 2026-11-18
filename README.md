@@ -68,6 +68,7 @@
 | `worker/iitContinuity.js` | 个人所得税到期地图静态数据（25 项） |
 | `worker/detail.js` | 单篇政策正文抓取与清洗（`/api/detail`） |
 | `web/index.html` + `web/app.js` | 网页版前端（政策库 + 三张对照表 / 筛选 / 搜索 / 收藏） |
+| `web/manifest.json` + `web/sw.js` | PWA：可「添加到主屏幕」当 App 用，支持离线打开 |
 | `miniprogram/` | **微信小程序**（政策库 + 三张对照表，`config.js` 配后端地址） |
 | `wrangler.toml` | Cloudflare 部署配置（Worker + assets + 自定义域名 + cron） |
 | `server/index.js` | **普通 Node 服务器版入口**（阿里云 / 任意 VPS），复用同一套 `worker/*.js` |

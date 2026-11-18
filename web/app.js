@@ -431,3 +431,10 @@ TABS.forEach((t) => {
 
 // 启动
 load();
+
+// 注册 Service Worker（可「添加到主屏幕」+ 离线可开）
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
