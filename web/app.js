@@ -249,14 +249,20 @@ function render(resetShown = true) {
     const hint = p.linkHint ? `<div class="hint">${esc(p.linkHint)}</div>` : '';
     const docDate = [p.docNo, p.date].filter(Boolean).join(' · ');
     const dept = p.department ? esc(p.department) : esc(p.column || '');
-    return `
-      <a class="item" href="${esc(p.url || 'https://fgk.chinatax.gov.cn/')}" target="_blank" rel="noopener">
+    const arrow = p.url ? ' <span class="arrow">›</span>' : '';
+    const body = `
         <div class="title">${favBtn}${newTag}${esc(p.title)}</div>
         ${summary}
         ${hint}
         <div class="meta">${statusTag}${vatTag}${regionTag}${areaTag}${prefTag}${taxTags}${lvTag}</div>
-        <div class="sub"><span>${esc(docDate)}</span><span>${dept} <span class="arrow">›</span></span></div>
-      </a>`;
+        <div class="sub"><span>${esc(docDate)}</span><span>${dept}${arrow}</span></div>`;
+    // 官方库未收录原文的政策：不做成链接，避免点开落到官网首页
+    if (!p.url) {
+      return `<div class="item nolink">${body}
+        <div class="nolink-hint">官方库未收录原文 · 请按文号「${esc(p.docNo || '')}」自行核实，或拨 12366 确认</div>
+      </div>`;
+    }
+    return `<a class="item" href="${esc(p.url)}" target="_blank" rel="noopener">${body}</a>`;
   }).join('') + (rest > 0
     ? `<div class="load-more"><button id="loadMoreBtn">加载更多 · 还有 ${rest} 条</button></div>`
     : '');
@@ -362,12 +368,17 @@ function makeContinuity(cfg) {
       const untilTag = '<span class="tag ' + meta.cls + '">' + esc(meta.label(x)) + '</span>';
       const docTag = x.docNo ? '<span class="tag lv">' + esc(x.docNo) + '</span>' : '';
       const basisTag = '<span class="tag lv">' + esc(x.basis) + '</span>';
-      return `
-      <a class="item${isWait ? ' warn' : ''}" href="${esc(x.url)}" target="_blank" rel="noopener">
+      const inner = `
         <div class="title">${isWait ? '⚠️ ' : ''}${esc(x.title)}</div>
         <div class="summary">${esc(x.plain || '')}</div>
-        <div class="meta">${untilTag}${docTag}${basisTag}</div>
-      </a>`;
+        <div class="meta">${untilTag}${docTag}${basisTag}</div>`;
+      // 法规库确实未收录的条目：不做成链接，避免点开落到官网首页
+      if (!x.url) {
+        return `<div class="item nolink${isWait ? ' warn' : ''}">${inner}
+          <div class="nolink-hint">官方库未收录原文 · 请按文号「${esc(x.docNo || x.basis || '')}」自行核实，或拨 12366 确认</div>
+        </div>`;
+      }
+      return `<a class="item${isWait ? ' warn' : ''}" href="${esc(x.url)}" target="_blank" rel="noopener">${inner}</a>`;
     }).join('') || '<div class="loading">该分类下暂无条目</div>';
   }
 

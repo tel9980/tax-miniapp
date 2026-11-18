@@ -230,5 +230,5 @@ export const VAT_CONTINUITY = [
 ];
 
 export function withUrl(list) {
-  return list.map((x) => ({ ...x, url: x.url || VAT_LAW.url }));
+  return list.map((x) => ({ ...x, url: x.url === undefined ? VAT_LAW.url : x.url }));
 }

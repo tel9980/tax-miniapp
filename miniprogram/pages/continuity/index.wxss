@@ -115,3 +115,5 @@
 .cont-basis {
   color: #8a8f99;
 }
+
+.cont-hint { margin-top: 8rpx; font-size: 22rpx; color: #b45309; line-height: 1.5; }

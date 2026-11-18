@@ -9,7 +9,7 @@ export const IIT_LAW = {
   docNo: '主席令第七号（2018年8月31日修正）',
   docTitle: '全国人民代表大会常务委员会关于修改《中华人民共和国个人所得税法》的决定',
   docDate: '2018-08-31',
-  url: 'https://fgk.chinatax.gov.cn/zcfgk/',
+  url: 'https://fgk.chinatax.gov.cn/zcfgk/c100009/c5193028/content.html',
   keyRule: '个税本身的制度性规定（基本减除费用6万元/年、3%~45%七级超额累进税率、专项附加扣除、免税所得范围）写在法律里，没有到期日；有时间限制的都是「延续实施」类的优惠文件，到期需重新发文延续。',
 };
 
@@ -26,24 +26,28 @@ export const IIT_CONTINUITY = [
   {
     g: '基本制度·长期有效', status: '长期有效', until: '长期',
     basis: '个人所得税法第六条',
+    url: 'https://fgk.chinatax.gov.cn/zcfgk/c100009/c5193028/content.html',
     title: '综合所得年度基本减除费用 6 万元（每月 5000 元）',
     plain: '每个人每年有 6 万元的收入不用交个税，按月算是 5000 元。这是法律规定的，不会到期。',
   },
   {
     g: '基本制度·长期有效', status: '长期有效', until: '长期',
     basis: '个人所得税法第三条',
+    url: 'https://fgk.chinatax.gov.cn/zcfgk/c100009/c5193028/content.html',
     title: '综合所得适用 3%~45% 七级超额累进税率',
     plain: '工资、劳务报酬、稿酬、特许权使用费合并起来按年算，分段累进，最低 3%、最高 45%。法律条文，长期有效。',
   },
   {
     g: '基本制度·长期有效', status: '长期有效', until: '长期',
     basis: '个人所得税法第四条',
+    url: 'https://fgk.chinatax.gov.cn/zcfgk/c100009/c5193028/content.html',
     title: '法定免税所得：国债和国家发行的金融债券利息、储蓄存款利息、保险赔款等',
     plain: '国债利息、银行存款利息、保险赔款、国家统一规定的补贴津贴等，法定不征个税。长期有效。',
   },
   {
     g: '基本制度·长期有效', status: '长期有效', until: '长期',
     basis: '财税字〔1998〕61号等',
+    url: 'http://fgk.chinatax.gov.cn/zcfgk/c102416/c5202588/content.html',
     title: '个人转让上市公司股票（二级市场买卖）所得暂不征收个人所得税',
     plain: '在股票二级市场买卖 A 股赚的差价，暂时不征个税。注意：限售股、原始股转让要交税，不是一回事。',
   },
@@ -60,6 +64,7 @@ export const IIT_CONTINUITY = [
   {
     g: '专项附加扣除·长期有效', status: '长期有效', until: '长期',
     basis: '个人所得税法第六条、国发〔2018〕41号',
+    url: 'http://fgk.chinatax.gov.cn/zcfgk/c102440/c5209858/content.html',
     title: '大病医疗扣除：个人负担超过 1.5 万元的部分，年度限额 8 万元据实扣除',
     plain: '一年看病自己掏的钱（医保目录内、扣除医保报销后）超过 1.5 万元的部分，最多可以扣 8 万元。长期有效。',
   },
@@ -157,6 +162,7 @@ export const IIT_CONTINUITY = [
     g: '延续实施·有明确到期日', status: '长期有效', until: '长期',
     basis: '财税〔2015〕101号',
     docNo: '财税〔2015〕101号',
+    url: 'http://fgk.chinatax.gov.cn/zcfgk/c102416/c5203902/content.html',
     title: '上市公司股息红利差别化征税：持股超过 1 年免征，1 个月至 1 年减半，1 个月内全额',
     plain: '拿 A 股分红，持股满 1 年免税，持股 1 个月到 1 年按 10% 交，持股不满 1 个月按 20% 交。长期有效。',
   },
@@ -174,6 +180,7 @@ export const IIT_CONTINUITY = [
     g: '区域人才优惠·需逐地确认', status: '继续有效', until: '2027-12-31',
     basis: '财税〔2021〕29号，经财税〔2026〕3号延续',
     docNo: '财税〔2021〕29号；延续文件财税〔2026〕3号',
+    url: 'https://shenzhen.chinatax.gov.cn/sztax/zcwj/rdwd/202604/4c349af30b16481fb60e61ec868aff9c.shtml',
     title: '前海深港现代服务业合作区境外高端人才和紧缺人才，个税超过 15% 的部分免征',
     plain: '前海的境外高端/紧缺人才个税超 15% 部分免征。已确认延续到 2027 年 12 月 31 日（深圳税务局 2026 年 4 月热点问答明确）。',
   },
@@ -181,6 +188,7 @@ export const IIT_CONTINUITY = [
     g: '区域人才优惠·需逐地确认', status: '待核实', until: '待核实',
     basis: '财税〔2022〕3号（原执行期至 2025-12-31，延续文件未查到）',
     docNo: '财税〔2022〕3号',
+    url: null,
     title: '横琴粤澳深度合作区高端人才和紧缺人才，个税超过 15% 的部分免征',
     plain: '横琴的高端/紧缺人才个税超 15% 部分免征。原文件执行到 2025 年底，总局和财政部官网都没检索到延续文件——申报前请打 12366 或问横琴税务局确认。',
   },
@@ -188,6 +196,7 @@ export const IIT_CONTINUITY = [
     g: '区域人才优惠·需逐地确认', status: '待核实', until: '待核实',
     basis: '财税〔2022〕29号（原执行期至 2025-12-31，延续文件未查到）',
     docNo: '财税〔2022〕29号',
+    url: null,
     title: '广州南沙港澳居民，个税税负超过港澳税负的部分免征',
     plain: '在南沙工作的港澳居民，个税超过港澳税负（约 15%）的部分免征。延续文件未查到，申报前请确认。',
   },
@@ -195,6 +204,7 @@ export const IIT_CONTINUITY = [
     g: '区域人才优惠·需逐地确认', status: '待核实', until: '2024-12-31',
     basis: '财税〔2020〕32号（执行至 2024-12-31）',
     docNo: '财税〔2020〕32号',
+    url: 'http://fgk.chinatax.gov.cn/zcfgk/c102416/c5202206/content.html',
     title: '海南自由贸易港高端紧缺人才，个税超过 15% 的部分免征',
     plain: '海南自贸港的高端/紧缺人才个税超 15% 部分免征。原文件执行到 2024 年 12 月 31 日，之后没有检索到延续文件，务必先确认再安排。',
   },
@@ -219,5 +229,6 @@ export const IIT_CONTINUITY = [
 ];
 
 export function iitWithUrl(list) {
-  return list.map((x) => ({ ...x, url: x.url || IIT_LAW.url }));
+  // 显式给 null 的条目（法规库确实未收录）保持无链接，绝不拿法规库首页冒充原文
+  return list.map((x) => ({ ...x, url: x.url === undefined ? IIT_LAW.url : x.url }));
 }

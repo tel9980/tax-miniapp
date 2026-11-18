@@ -35,6 +35,7 @@
           <text class="cont-until" wx:if="{{it.until}}">{{it.until === '长期' ? '长期有效' : '至'}}{{it.until === '长期' ? '' : it.until}}</text>
           <text class="cont-basis" wx:if="{{it.basis}}">依据 {{it.basis}}</text>
         </view>
+        <view class="cont-hint" wx:if="{{!it.url}}">官方库未收录原文，请按文号「{{it.docNo || it.basis}}」拨 12366 确认</view>
       </view>
     </view>
   </block>
