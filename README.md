@@ -15,8 +15,8 @@
 
 ## 功能
 
-- **政策列表**：约 390 条政策按日期倒序（标题 / 文号 / 成文日期 / 发文单位 / 效力等级）
-- **只看优惠**：一键只看「税收优惠」政策（84 条，免征 / 减税 / 退税 / 扣除抵免等）
+- **政策列表**：约 383 条政策按日期倒序（标题 / 文号 / 成文日期 / 发文单位 / 效力等级）
+- **只看优惠**：一键只看「税收优惠」政策（83 条，免征 / 减税 / 退税 / 扣除抵免等）
 - **多维度筛选**：税种、优惠类型、地区（全国 / 广东）、区域（横琴 / 前海 / 南沙 / 大湾区）、有效期状态（生效中 / 即将到期 / 已到期 / 未标注 / 待核实）
 - **关键词搜索**：搜标题 / 文号 / 摘要
 - **一句话看懂**：每条优惠配大白话摘要（核心政策人工精写，最新政策抓详情页正文首段，其余模板生成）
@@ -40,7 +40,7 @@
 │         ├─ 总局 fgk 8 栏目（getFileListByCodeId，各 50 条）    │
 │         ├─ 广东局 2 栏目（服务端渲染 HTML，正则解析）           │
 │         ├─ 总局全文搜索 5 区域关键词（search5/search/s，串行+重试）│
-│         ├─ REGIONAL_SEED 7 条核心区域政策（硬编码兜底）        │
+│         ├─ REGIONAL_SEED 13 条核心区域政策（硬编码兜底）       │
 │         ├─ 结构化 + 优惠判定 + 税种分类 + 有效期标记 + 去重排序  │
 │         ├─ 优惠补摘要（详情页正文 / 模板兜底）                  │
 │         └─ 写 KV ──► 返回 JSON                               │
@@ -65,11 +65,12 @@
 | `worker/vatContinuity.js` | 增值税新法衔接表静态数据（58 项） |
 | `worker/citContinuity.js` | 企业所得税到期地图静态数据（24 项） |
 | `worker/iitContinuity.js` | 个人所得税到期地图静态数据（25 项） |
-| `web/index.html` + `web/app.js` | 网页版前端（搜索 / 筛选 / 渲染 / 衔接表） |
+| `web/index.html` + `web/app.js` | 网页版前端（政策库 + 三张对照表 / 筛选 / 搜索 / 收藏） |
 | `miniprogram/` | **微信小程序**（政策库 + 三张对照表，`config.js` 配后端地址） |
 | `wrangler.toml` | Cloudflare 部署配置（Worker + assets + 自定义域名 + cron） |
-| `test-regional.mjs` | 区域优惠抓取本地测试脚本 |
-| `data/`、`cloudfunctions/`、`functions/`、`constants/`、`utils/`、`pages/`、`components/` | 早期「计算器」原型历史遗留（已弃用，保留参考） |
+| `scripts/smoke.mjs` | 本地自测脚本（`node scripts/smoke.mjs [--full]`） |
+| `docs/技术架构.md` | 数据源接口、解析规则、已知限制 |
+| `docs/CF网页版部署指南.md` | 部署、抓取、故障排查、回滚 |
 
 ## 数据源细节
 
@@ -86,17 +87,37 @@
 ### 网页版（Cloudflare Worker）
 
 ```bash
-# 需 CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID（在 /workspace/cf-md-notes/.env.local）
+cd /workspace/tax-miniapp
+unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy ALL_PROXY all_proxy NODE_USE_ENV_PROXY
+set -a && source /workspace/cf-md-notes/.env.local && set +a   # CLOUDFLARE_API_TOKEN / ACCOUNT_ID
+node scripts/smoke.mjs --full      # 先自测
 npx wrangler deploy
+curl https://jy.1211.cc.cd/api/refresh   # 立即抓一次（也可等次日 09:00）
 ```
 
-自定义域名在 `wrangler.toml` 的 `[[routes]]` 配置（`jy.1211.cc.cd`）；cron 在 `[triggers]` 配置（`0 1 * * *` = 北京 09:00）。
+> 必须 `unset` 代理（本机内网代理一挂 wrangler 就报 `fetch failed`），必须 source token（否则报 `non-interactive environment`）。完整运维手册见 [docs/CF网页版部署指南.md](docs/CF网页版部署指南.md)。
 
 ### 微信小程序
 
-1. 微信开发者工具导入 `/workspace/tax-miniapp`（AppID 已填 `project.config.json`）
+1. 微信开发者工具导入 `/workspace/tax-miniapp`（AppID 已填 `project.config.json`：`wx940d75405673b165`）
 2. 开发者工具「详情 → 本地设置 → 勾选不校验合法域名」即可直连后端调试
-3. 上线前：`miniprogram/config.js` 的 `API_BASE` 换成备案域名 + 小程序后台加 request 合法域名
+3. 上线前：`miniprogram/config.js` 的 `API_BASE` 换成**已 ICP 备案**的域名 + 小程序后台加 request 合法域名
+
+## 本地自测
+
+```bash
+node scripts/smoke.mjs          # 秒级：三张表 + 缓存读取
+node scripts/smoke.mjs --full   # 额外真实抓一次全量（约 10~30s）
+```
+
+检查项：政策/优惠条数、抓取报错、**有无指向官网首页的假链接**、区域政策有无被误删、三张表的条数/状态值/分组值是否合法。全绿再部署。
+
+## 已知限制
+
+1. **小程序上线卡在域名备案**——`wx.request` 只允许备案域名，`jy.1211.cc.cd` 在 Cloudflare 上未备案。开发者工具可用，真机/发布会被拦。出路：换备案域名指向同一 Worker / 静态打包随版本发 / 微信云开发（要钱）。
+2. **横琴、南沙的区域优惠标「待核实」**——原文件执行至 2025-12-31，总局/财政部/省局三渠道均检索不到延续文件（前海已由深圳税务局 12366 问答确认延续至 2027-12-31）。页面明确标注需人工确认，不猜。
+3. **「优惠」标签是关键词判定**，非官方结论，以原文为准。
+4. **CF 免费计划 CPU 约 10ms**，只能给约 10 条优惠抓真正文摘要，其余为模板摘要。
 
 ## 免责声明
 
