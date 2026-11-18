@@ -1,8 +1,0 @@
-/* 开票筹划页面 */
-.page { padding-bottom: 60rpx; }
-.calc-btn { margin-top: 30rpx; }
-.hint { font-size: 22rpx; color: #8a94a6; margin-top: 12rpx; }
-.result-row { display: flex; justify-content: space-between; align-items: center; padding: 16rpx 0; font-size: 28rpx; }
-.result-row text:first-child { color: #5a6472; }
-.note { margin-top: 16rpx; font-size: 24rpx; color: #5a6472; line-height: 1.6; }
-.disclaimer { text-align: center; color: #a0a8b5; font-size: 22rpx; margin-top: 30rpx; }

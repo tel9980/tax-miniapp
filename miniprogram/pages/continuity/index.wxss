@@ -1,0 +1,117 @@
+.page {
+  padding-bottom: 40rpx;
+}
+
+/* tab */
+.tab-bar {
+  display: flex;
+  background: #fff;
+  margin: 20rpx 24rpx 0;
+  border-radius: 16rpx;
+  padding: 8rpx;
+}
+.tab {
+  flex: 1;
+  text-align: center;
+  font-size: 28rpx;
+  line-height: 72rpx;
+  border-radius: 12rpx;
+  color: #4a4f59;
+}
+.tab.active {
+  background: #2b6de8;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* 法条卡片 */
+.law-card {
+  background: #eef3ff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin: 20rpx 24rpx 0;
+}
+.law-head {
+  display: flex;
+  align-items: baseline;
+}
+.law-name {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1f2329;
+}
+.law-from {
+  margin-left: 16rpx;
+  font-size: 22rpx;
+  color: #2b6de8;
+}
+.law-doc {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #4a4f59;
+  font-weight: 600;
+}
+.law-rule {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #5a6270;
+  line-height: 1.6;
+}
+
+/* 分组 */
+.group-title {
+  margin: 28rpx 28rpx 8rpx;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #1f2329;
+}
+.group-count {
+  color: #8a8f99;
+  font-weight: 400;
+  font-size: 24rpx;
+}
+
+/* 条目 */
+.cont-item {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin: 0 24rpx 16rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
+}
+.cont-title {
+  display: flex;
+  align-items: flex-start;
+}
+.cont-title .tag {
+  flex-shrink: 0;
+  margin-top: 4rpx;
+}
+.cont-title-text {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1f2329;
+  line-height: 1.45;
+  margin-left: 8rpx;
+}
+.cont-plain {
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  color: #4a4f59;
+  line-height: 1.6;
+  background: #f7f8fa;
+  border-radius: 12rpx;
+  padding: 16rpx 20rpx;
+}
+.cont-meta {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  color: #8a8f99;
+}
+.cont-until {
+  color: #d48806;
+  margin-right: 16rpx;
+}
+.cont-basis {
+  color: #8a8f99;
+}

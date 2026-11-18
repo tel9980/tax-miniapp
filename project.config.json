@@ -1,7 +1,6 @@
 {
-  "description": "税收优惠小程序 —— 个人 + 小微企业 一体化税务筹划助手（政策自动同步版）",
+  "description": "税收优惠小程序 —— 最新税收优惠政策浏览平台（政策库 + 衔接表）",
   "miniprogramRoot": "miniprogram/",
-  "cloudfunctionRoot": "cloudfunctions/",
   "packOptions": {
     "ignore": [],
     "include": []
@@ -39,7 +38,7 @@
   },
   "compileType": "miniprogram",
   "libVersion": "3.5.8",
-  "appid": "touristappid",
+  "appid": "wx7b7a501082550565",
   "projectname": "tax-miniapp",
   "condition": {},
   "editorSetting": {

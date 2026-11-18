@@ -1,9 +1,0 @@
-/* 专项附加扣除页面 */
-.page { padding-bottom: 60rpx; }
-.calc-btn { margin-top: 30rpx; }
-.picker-val { color: #1a3d5c; }
-.result-row { display: flex; justify-content: space-between; align-items: center; padding: 16rpx 0; font-size: 28rpx; }
-.result-row text:first-child { color: #5a6472; }
-.detail-title { font-size: 26rpx; font-weight: 600; color: #1a3d5c; margin-top: 10rpx; }
-.detail-row { display: flex; justify-content: space-between; padding: 10rpx 0; font-size: 26rpx; color: #5a6472; }
-.disclaimer { text-align: center; color: #a0a8b5; font-size: 22rpx; margin-top: 30rpx; }

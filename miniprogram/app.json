@@ -1,41 +1,26 @@
 {
   "pages": [
-    "pages/index/index",
-    "pages/personal/income/index",
-    "pages/personal/annual/index",
-    "pages/personal/deduction/index",
-    "pages/enterprise/sme/index",
-    "pages/enterprise/invoice/index",
-    "pages/calculator/index",
-    "pages/policy/index"
+    "pages/policies/index",
+    "pages/continuity/index"
   ],
   "window": {
-    "backgroundTextStyle": "dark",
-    "navigationBarBackgroundColor": "#1a3d5c",
     "navigationBarTitleText": "税收优惠",
-    "navigationBarTextStyle": "white",
-    "backgroundColor": "#f4f6f9"
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f5f6f7",
+    "backgroundTextStyle": "dark"
   },
   "tabBar": {
-    "color": "#8a94a6",
-    "selectedColor": "#1a3d5c",
+    "color": "#8a8f99",
+    "selectedColor": "#2b6de8",
     "backgroundColor": "#ffffff",
     "borderStyle": "black",
     "list": [
-      {
-        "pagePath": "pages/index/index",
-        "text": "首页"
-      },
-      {
-        "pagePath": "pages/calculator/index",
-        "text": "计算器"
-      },
-      {
-        "pagePath": "pages/policy/index",
-        "text": "政策库"
-      }
+      { "pagePath": "pages/policies/index", "text": "政策库" },
+      { "pagePath": "pages/continuity/index", "text": "衔接表" }
     ]
   },
   "style": "v2",
-  "sitemapLocation": "sitemap.json"
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
 }

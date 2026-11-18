@@ -1,7 +1,4 @@
 {
-  "desc": "税收优惠小程序 sitemap 配置，允许被索引",
-  "rules": [{
-    "action": "allow",
-    "page": "*"
-  }]
+  "desc": "税收优惠政策浏览平台",
+  "rules": [{ "action": "allow", "page": "*" }]
 }

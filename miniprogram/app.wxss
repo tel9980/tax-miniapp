@@ -1,94 +1,52 @@
-/* app.wxss —— 全局样式，统一视觉规范 */
 page {
-  background: #f4f6f9;
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: #f5f6f7;
   font-size: 28rpx;
-  color: #2c3e50;
+  color: #1f2329;
+  line-height: 1.6;
 }
 
-/* ===== 通用卡片 ===== */
+/* 卡片 */
 .card {
-  background: #ffffff;
-  border-radius: 20rpx;
-  padding: 28rpx;
-  margin: 20rpx 24rpx;
-  box-shadow: 0 4rpx 16rpx rgba(26, 61, 92, 0.06);
-}
-
-.card-title {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: #1a3d5c;
-  margin-bottom: 20rpx;
-}
-
-/* ===== 主色调 ===== */
-.primary-color { color: #1a3d5c; }
-.success-color { color: #27ae60; }
-.warn-color { color: #e67e22; }
-.danger-color { color: #e74c3c; }
-
-/* ===== 数字高亮 ===== */
-.num-big {
-  font-size: 56rpx;
-  font-weight: 700;
-  color: #1a3d5c;
-}
-.num-mid {
-  font-size: 40rpx;
-  font-weight: 600;
-  color: #27ae60;
-}
-
-/* ===== 按钮 ===== */
-.btn-primary {
-  background: #1a3d5c;
-  color: #ffffff;
+  background: #fff;
   border-radius: 16rpx;
-  padding: 22rpx 0;
-  text-align: center;
-  font-size: 32rpx;
-  font-weight: 600;
+  padding: 24rpx;
+  margin: 0 24rpx 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
 }
-.btn-primary:active { opacity: 0.85; }
 
-/* ===== 标签 ===== */
+/* 标签 */
 .tag {
   display: inline-block;
-  padding: 6rpx 16rpx;
+  font-size: 20rpx;
+  line-height: 1;
+  padding: 8rpx 14rpx;
   border-radius: 8rpx;
-  font-size: 22rpx;
-  background: #eef2f7;
-  color: #1a3d5c;
-  margin-right: 12rpx;
+  margin-right: 8rpx;
+  margin-bottom: 8rpx;
 }
-.tag-success {
-  background: #e8f8ef;
-  color: #27ae60;
-}
-.tag-warn {
-  background: #fdf1e3;
-  color: #e67e22;
+.tag.tax { background: #eef3ff; color: #2b6de8; }
+.tag.type { background: #e8f7ef; color: #0f9d58; }
+.tag.region { background: #f3f0ff; color: #7c4dff; }
+.tag.area { background: #e6f7f4; color: #0d9488; }
+.tag.column { background: #fff7e6; color: #d48806; }
+.tag.st-ok { background: #e8f7ef; color: #0f9d58; }
+.tag.st-soon { background: #fff7e6; color: #d48806; }
+.tag.st-expired { background: #feeceb; color: #d4380d; }
+.tag.st-unknown { background: #f0f1f3; color: #8a8f99; }
+.tag.st-warn { background: #fff1e6; color: #d46b08; }
+
+/* 空态 */
+.empty {
+  text-align: center;
+  color: #8a8f99;
+  padding: 120rpx 40rpx;
+  font-size: 26rpx;
 }
 
-/* ===== 分割线 ===== */
-.divider {
-  height: 2rpx;
-  background: #eef1f5;
-  margin: 24rpx 0;
-}
-
-/* ===== 表单行 ===== */
-.form-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20rpx 0;
-  border-bottom: 2rpx solid #f2f4f7;
-}
-.form-label { font-size: 28rpx; color: #2c3e50; }
-.form-input {
-  text-align: right;
-  font-size: 28rpx;
-  color: #1a3d5c;
+/* 加载更多 */
+.load-more {
+  text-align: center;
+  color: #2b6de8;
+  padding: 24rpx;
+  font-size: 26rpx;
 }

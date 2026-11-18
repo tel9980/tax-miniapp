@@ -1,0 +1,130 @@
+.page {
+  padding-bottom: 40rpx;
+}
+
+/* 搜索栏 */
+.search-bar {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 24rpx 8rpx;
+}
+.search-box {
+  flex: 1;
+  background: #fff;
+  border-radius: 32rpx;
+  padding: 0 28rpx;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+}
+.search-input {
+  flex: 1;
+  font-size: 28rpx;
+}
+.pref-toggle {
+  margin-left: 16rpx;
+  height: 72rpx;
+  line-height: 72rpx;
+  padding: 0 28rpx;
+  border-radius: 32rpx;
+  background: #fff;
+  color: #2b6de8;
+  font-size: 26rpx;
+  border: 2rpx solid #2b6de8;
+  box-sizing: border-box;
+}
+.pref-toggle.on {
+  background: #2b6de8;
+  color: #fff;
+}
+
+/* 统计 */
+.stats {
+  display: flex;
+  align-items: baseline;
+  padding: 8rpx 28rpx 4rpx;
+  font-size: 24rpx;
+  color: #8a8f99;
+}
+.stats-count { color: #1f2329; font-weight: 600; }
+.stats-pref { margin-left: 16rpx; color: #0f9d58; }
+.stats-updated { margin-left: auto; }
+
+/* 筛选 chips */
+.chip-scroll {
+  white-space: nowrap;
+  padding: 8rpx 0;
+}
+.chip-row {
+  display: inline-flex;
+  padding: 0 24rpx;
+}
+.chip {
+  display: inline-block;
+  font-size: 24rpx;
+  padding: 10rpx 24rpx;
+  margin-right: 12rpx;
+  border-radius: 28rpx;
+  background: #fff;
+  color: #4a4f59;
+  flex-shrink: 0;
+}
+.chip.active {
+  background: #2b6de8;
+  color: #fff;
+}
+
+/* 政策卡片 */
+.policy-card {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin: 16rpx 24rpx 0;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
+}
+.policy-title {
+  display: flex;
+  align-items: flex-start;
+}
+.pref-dot {
+  flex-shrink: 0;
+  background: #0f9d58;
+  color: #fff;
+  font-size: 20rpx;
+  width: 34rpx;
+  height: 34rpx;
+  line-height: 34rpx;
+  text-align: center;
+  border-radius: 8rpx;
+  margin-right: 12rpx;
+  margin-top: 6rpx;
+}
+.title-text {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1f2329;
+  line-height: 1.45;
+}
+.policy-meta {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #8a8f99;
+}
+.meta-docno { margin-right: 16rpx; color: #5a6270; }
+.tag-row {
+  margin-top: 12rpx;
+}
+.policy-plain {
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  color: #4a4f59;
+  line-height: 1.6;
+  background: #f7f8fa;
+  border-radius: 12rpx;
+  padding: 16rpx 20rpx;
+}
+.policy-link {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #d46b08;
+}

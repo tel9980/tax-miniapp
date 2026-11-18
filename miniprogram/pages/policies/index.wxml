@@ -1,0 +1,73 @@
+<view class="page">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <view class="search-box">
+      <input class="search-input" placeholder="搜索标题 / 文号 / 摘要" value="{{q}}" bindinput="onInput" confirm-type="search" />
+    </view>
+    <view class="pref-toggle {{prefOnly ? 'on' : ''}}" bindtap="togglePref">只看优惠</view>
+  </view>
+
+  <!-- 统计 -->
+  <view class="stats">
+    <text class="stats-count">共 {{filtered.length}} 条</text>
+    <text wx:if="{{prefOnly}}" class="stats-pref">优惠 {{prefCount}} 条</text>
+    <text wx:if="{{updatedAtShort}}" class="stats-updated">更新于 {{updatedAtShort}}</text>
+  </view>
+
+  <!-- 筛选：税种 -->
+  <scroll-view scroll-x class="chip-scroll" enhanced show-scrollbar="{{false}}" wx:if="{{taxOptions.length > 1}}">
+    <view class="chip-row">
+      <view class="chip {{tax === item ? 'active' : ''}}" wx:for="{{taxOptions}}" wx:key="*this" data-v="{{item}}" bindtap="setTax">{{item}}</view>
+    </view>
+  </scroll-view>
+
+  <!-- 筛选：优惠类型 -->
+  <scroll-view scroll-x class="chip-scroll" enhanced show-scrollbar="{{false}}" wx:if="{{typeOptions.length > 1}}">
+    <view class="chip-row">
+      <view class="chip {{type === item ? 'active' : ''}}" wx:for="{{typeOptions}}" wx:key="*this" data-v="{{item}}" bindtap="setType">{{item}}</view>
+    </view>
+  </scroll-view>
+
+  <!-- 筛选：地区 / 区域 -->
+  <scroll-view scroll-x class="chip-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="chip-row">
+      <view class="chip {{location === item ? 'active' : ''}}" wx:for="{{locationOptions}}" wx:key="*this" data-v="{{item}}" bindtap="setLocation">{{item}}</view>
+    </view>
+  </scroll-view>
+
+  <!-- 筛选：有效期状态 -->
+  <scroll-view scroll-x class="chip-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="chip-row">
+      <view class="chip {{status === item ? 'active' : ''}}" wx:for="{{statusOptions}}" wx:key="*this" data-v="{{item}}" bindtap="setStatus">{{item}}</view>
+    </view>
+  </scroll-view>
+
+  <!-- 列表 -->
+  <view wx:if="{{loading}}" class="empty">加载中…</view>
+  <view wx:elif="{{error}}" class="empty">{{error}}</view>
+  <view wx:elif="{{visible.length === 0}}" class="empty">没有匹配的政策</view>
+
+  <view wx:else>
+    <view class="policy-card" wx:for="{{visible}}" wx:key="id" data-url="{{item.url}}" bindtap="openUrl">
+      <view class="policy-title">
+        <text wx:if="{{item.isPreference}}" class="pref-dot">惠</text>
+        <text class="title-text">{{item.title}}</text>
+      </view>
+      <view class="policy-meta">
+        <text wx:if="{{item.docNo}}" class="meta-docno">{{item.docNo}}</text>
+        <text wx:if="{{item.date}}" class="meta-date">{{item.date}}</text>
+      </view>
+      <view class="tag-row">
+        <text class="tag tax" wx:for="{{item.taxTypes}}" wx:key="*this" wx:for-item="t">{{t}}</text>
+        <text class="tag type" wx:if="{{item.prefType}}">{{item.prefType}}</text>
+        <text class="tag region" wx:if="{{item.region}}">{{item.region}}</text>
+        <text class="tag area" wx:if="{{item.area}}">{{item.area}}</text>
+        <text wx:if="{{item.status}}" class="tag {{item.status === '生效中' ? 'st-ok' : item.status === '即将到期' ? 'st-soon' : item.status === '已到期' ? 'st-expired' : item.status === '待核实' ? 'st-warn' : 'st-unknown'}}">{{item.status}}</text>
+      </view>
+      <view class="policy-plain" wx:if="{{item.plain}}">{{item.plain}}</view>
+      <view class="policy-link" wx:if="{{item.linkHint}}">{{item.linkHint}}</view>
+    </view>
+
+    <view wx:if="{{hasMore}}" class="load-more" bindtap="loadMore">加载更多（还有 {{filtered.length - shown}} 条）</view>
+  </view>
+</view>
