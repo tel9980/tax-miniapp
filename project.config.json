@@ -1,48 +1,27 @@
 {
   "description": "税收优惠小程序 —— 最新税收优惠政策浏览平台（政策库 + 衔接表）",
   "miniprogramRoot": "miniprogram/",
-  "packOptions": {
-    "ignore": [],
-    "include": []
-  },
+  "compileType": "miniprogram",
+  "libVersion": "3.5.8",
+  "appid": "wx940d75405673b165",
+  "projectname": "tax-miniapp",
   "setting": {
     "urlCheck": false,
     "es6": true,
     "enhance": true,
     "postcss": true,
-    "preloadBackgroundData": false,
     "minified": true,
-    "newFeature": true,
     "coverView": true,
     "nodeModules": false,
     "autoAudits": false,
-    "showShadowRootInWxmlPanel": true,
-    "scopeDataCheck": false,
-    "uglifyFileName": false,
     "checkInvalidKey": true,
     "checkSiteMap": true,
     "uploadWithSourceMap": true,
-    "compileHotReLoad": false,
-    "lazyloadPlaceholderEnable": false,
-    "useMultiFrameRuntime": true,
-    "useApiHook": true,
-    "useApiHostProcess": true,
-    "babelSetting": {
-      "ignore": [],
-      "disablePlugins": [],
-      "outputPath": ""
-    },
-    "useIsolateContext": true,
-    "useCompilerModule": true,
-    "userConfirmedUseCompilerModuleSwitch": false
+    "compileHotReLoad": false
   },
-  "compileType": "miniprogram",
-  "libVersion": "3.5.8",
-  "appid": "wx940d75405673b165",
-  "projectname": "tax-miniapp",
-  "condition": {},
-  "editorSetting": {
-    "tabIndent": "insertSpaces",
-    "tabSize": 2
-  }
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "condition": {}
 }
