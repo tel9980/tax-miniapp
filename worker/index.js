@@ -96,6 +96,11 @@ const REGIONAL_SEED = [
   { id: 'seed-hq-iit15', title: '横琴粤澳深度合作区高端人才和紧缺人才个人所得税税负超15%部分免征', docNo: '财税〔2022〕3号', date: '2022-01-27', url: 'https://fgk.chinatax.gov.cn/zcfgk/', taxTypes: ['个人所得税'], effectLevel: '财税文件', department: '财政部,税务总局', isPreference: true, prefType: '免税', region: '广东', area: '横琴', plain: '在横琴工作的境内外高端人才，个税超过15%的部分免征，等于最多只交15%。', linkHint: '总局法规库未收录该文全文，点击进入政策库后用文号检索全文', summary: '对在横琴粤澳深度合作区工作的境内外高端人才和紧缺人才，其个人所得税税负超过15%的部分予以免征。' },
   { id: 'seed-qh-iit15', title: '前海深港现代服务业合作区境外高端和紧缺人才个人所得税税负超15%部分免征', docNo: '财税〔2021〕29号', date: '2021-06-01', url: 'https://fgk.chinatax.gov.cn/zcfgk/', taxTypes: ['个人所得税'], effectLevel: '财税文件', department: '财政部,税务总局', isPreference: true, prefType: '免税', region: '广东', area: '前海', plain: '在前海工作的境外高端人才，个税超过15%的部分由财政补回来，等于最多只交15%。', linkHint: '总局法规库未收录该文全文，点击进入政策库后用文号检索全文', summary: '对在前海深港现代服务业合作区工作的境外高端人才和紧缺人才，其个人所得税税负超过15%的部分给予财政补贴、予以免征。' },
   { id: 'seed-ns-iit15', title: '广州南沙港澳居民个人所得税税负超15%部分免征', docNo: '财税〔2022〕29号', date: '2022-09-01', url: 'https://fgk.chinatax.gov.cn/zcfgk/', taxTypes: ['个人所得税'], effectLevel: '财税文件', department: '财政部,税务总局', isPreference: true, prefType: '免税', region: '广东', area: '南沙', plain: '在广州南沙工作的港澳居民，个税超过港澳税负（15%）的部分免征。', linkHint: '总局法规库未收录该文全文，点击进入政策库后用文号检索全文', summary: '对在广州南沙工作的港澳居民，其个人所得税税负超过港澳税负（15%）的部分予以免征。' },
+  { id: 'seed-hq-vat24', title: '横琴粤澳深度合作区调整有关增值税和消费税退税货物范围', docNo: '财税〔2024〕1号', date: '2024-01-11', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5220510/content.html', taxTypes: ['增值税', '消费税'], effectLevel: '财税文件', department: '财政部,税务总局', isPreference: true, prefType: '减税', region: '广东', area: '横琴', plain: '横琴合作区增值税和消费税退税货物范围调整，部分货物的退税待遇更优惠。', summary: '调整横琴粤澳深度合作区增值税和消费税退税货物的范围，明确合作区相关企业可享受的退税货物清单。' },
+  { id: 'seed-hq-import24a', title: '横琴粤澳深度合作区货物有关进出口税收政策', docNo: '财关税〔2024〕1号', date: '2024-01-03', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5220339/content.html', taxTypes: ['关税'], effectLevel: '财税文件', department: '财政部,海关总署,税务总局', isPreference: true, prefType: '免税', region: '广东', area: '横琴', plain: '横琴合作区符合条件的货物进出口享受免税、保税等税收优惠。', summary: '对横琴粤澳深度合作区符合条件的货物进出口，实行免税、保税等税收优惠政策。' },
+  { id: 'seed-hq-import24b', title: '横琴粤澳深度合作区个人行李和寄递物品有关税收政策', docNo: '财关税〔2024〕2号', date: '2024-01-03', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5220336/content.html', taxTypes: ['关税'], effectLevel: '财税文件', department: '财政部,海关总署,税务总局', isPreference: true, prefType: '免税', region: '广东', area: '横琴', plain: '横琴合作区个人行李和寄递物品享受免税额度等税收优惠。', summary: '对横琴粤澳深度合作区个人携带的行李物品和寄递物品，实行免税额度等税收优惠政策。' },
+  { id: 'seed-dwq-vat20', title: '粤港澳大湾区实行有关增值税政策', docNo: '财税〔2020〕48号', date: '2020-10-26', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5202178/content.html', taxTypes: ['增值税'], effectLevel: '财税文件', department: '财政部,海关总署,税务总局', isPreference: true, prefType: '减税', region: '广东', area: '大湾区', plain: '大湾区（珠三角九市）符合条件的行业享受增值税优惠政策。', summary: '对在粤港澳大湾区（珠三角九市）符合条件的行业，实行增值税优惠政策。' },
+  { id: 'seed-ht-import26', title: '河套深港科技创新合作区深圳园区货物进出口有关税收政策', docNo: '财关税〔2026〕1号', date: '2026-01-09', url: 'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5247134/content.html', taxTypes: ['关税'], effectLevel: '财税文件', department: '财政部,海关总署,税务总局', isPreference: true, prefType: '免税', region: '广东', area: '河套', plain: '河套深港合作区深圳园区符合条件的货物进出口享受免税、保税等优惠。', summary: '对河套深港科技创新合作区深圳园区符合条件的货物进出口，实行免税、保税等税收优惠政策。' },
 ];
 
 // ===== 区域关键词 → 用总局全文搜索接口自动补充最新区域政策 =====
@@ -121,6 +126,9 @@ const EFFECTIVE_UNTIL = [
   { match: ['新能源汽车车辆购置税'], until: '2027-12-31' },
   { match: ['专项附加扣除标准'], until: '长期' },
   { match: ['个人养老金'], until: '长期' },
+  { match: ['加计抵减'], until: '2027-12-31' },
+  { match: ['托育', '家政', '社区家庭'], until: '2027-12-31' },
+  { match: ['公共租赁住房'], until: '2027-12-31' },
 ];
 
 // ===== 工具函数 =====
@@ -214,6 +222,13 @@ function parseExpiry(text, date) {
       return end.toISOString().slice(0, 10);
     }
   }
+  // 5. 「十五五」期间 → 2026-2030 规划期，截止 2030-12-31
+  if (text.includes('十五五')) return '2030-12-31';
+  // 6. 「十四五」期间 → 2021-2025 规划期，截止 2025-12-31
+  if (text.includes('十四五')) return '2025-12-31';
+  // 7. 「YYYY—YYYY年」范围式（如「2026—2027年」「2025年度—2027年度」）→ 取结束年份 12-31
+  m = text.match(/(\d{4})\s*(?:年(?:度)?)?\s*[—–\-~至到]\s*(\d{4})\s*年/);
+  if (m && +m[2] > +m[1] && +m[2] >= 2024 && +m[2] <= 2035) return `${m[2]}-12-31`;
   return null;
 }
 
@@ -394,15 +409,19 @@ async function fetchRegionalByKeyword(item) {
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
       'Referer': 'https://fgk.chinatax.gov.cn/zcfgk/',
+      'X-Requested-With': 'XMLHttpRequest',
     },
   };
-  // 搜索接口偶发限流（返回 HTML 而非 JSON），失败等 800ms 重试一次
+  // 搜索接口偶发限流（返回 HTML 而非 JSON），失败指数退避重试最多 3 次
   let j = null;
-  for (let attempt = 0; attempt < 2 && !j; attempt++) {
-    if (attempt > 0) await new Promise((r) => setTimeout(r, 800));
+  for (let attempt = 0; attempt < 3 && !j; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, attempt * 1200));
     try {
       const res = await fetch(url, opts);
-      if (res.ok) j = await res.json();
+      if (res.ok) {
+        const txt = await res.text();
+        try { j = JSON.parse(txt); } catch { /* 限流返回 HTML，下一轮重试 */ }
+      }
     } catch {
       // 网络异常，下一轮重试
     }
@@ -507,7 +526,7 @@ async function fetchAll() {
         (reason) => ({ status: 'rejected', reason })
       )
     );
-    await new Promise((r) => setTimeout(r, 400));
+    await new Promise((r) => setTimeout(r, 1000));
   }
 
   const all = [];
@@ -526,16 +545,35 @@ async function fetchAll() {
   });
 
   // 广东区域优惠核心 seed 始终并入（保证专题一定展示核心政策），并补有效期状态
-  all.push(...REGIONAL_SEED.map((p) => withExpiry({ ...p }, `${p.title} ${p.summary || ''}`, p.date)));
+  // 区域 seed 的核实状态：前海企税 15% 已确认延续至 2027 年底（财税〔2026〕3号），
+  // 横琴/南沙企税 15% 及三地个税 15% 暂未查到延续文件 → 待核实（不猜）
+  const REGIONAL_STATUS = {
+    'seed-qh-cit15': { expiry: '2027-12-31', status: '生效中' },
+    'seed-hq-cit15': { expiry: null, status: '待核实' },
+    'seed-ns-cit15': { expiry: null, status: '待核实' },
+    'seed-hq-iit15': { expiry: null, status: '待核实' },
+    'seed-qh-iit15': { expiry: null, status: '待核实' },
+    'seed-ns-iit15': { expiry: null, status: '待核实' },
+  };
+  all.push(...REGIONAL_SEED.map((p) => {
+    const st = REGIONAL_STATUS[p.id];
+    return withExpiry(st ? { ...p, ...st } : { ...p }, `${p.title} ${p.summary || ''}`, p.date);
+  }));
   // 全国高频核心优惠 seed 始终并入（用户最关心、且不在「最新50条」抓取范围），并补有效期状态
   all.push(...SEED_POLICIES.map((p) => withExpiry({ ...p }, `${p.title} ${p.plain || ''}`, p.date)));
 
-  const seen = new Set();
+  const seen = new Map();
   const dedup = [];
   for (const p of all) {
-    if (seen.has(p.id)) continue;
-    seen.add(p.id);
-    dedup.push(p);
+    // 按发文字号去重（seed 与动态抓取的同一政策文号相同，id 不同）；无文号回退 id
+    const key = p.docNo ? 'doc:' + p.docNo.replace(/\s+/g, '') : 'id:' + p.id;
+    const prev = seen.get(key);
+    if (!prev) { seen.set(key, p); dedup.push(p); continue; }
+    // 重复时 seed（人工校对，摘要/提示更全）优先覆盖动态抓取的
+    if (!prev.id.startsWith('seed-') && p.id.startsWith('seed-')) {
+      dedup[dedup.indexOf(prev)] = p;
+      seen.set(key, p);
+    }
   }
   dedup.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   const clean = dedup.filter((p) => p.title && p.url);
@@ -566,6 +604,15 @@ async function fetchAll() {
     });
   }
   for (const p of templateBatch) p.plain = templatePlain(p);
+
+  // 补摘要后重算有效期：详情页正文常含「至 YYYY 年 MM 月 DD 日」等表述，
+  // 而 status 在 parseRecord 时已按旧 plain（当时为空）算过，这里用新 plain 再提取一次
+  for (const p of needSummary) {
+    if (p.status === '未标注' && p.plain) {
+      const j = judgeStatus(parseExpiry(`${p.title} ${p.plain}`, p.date));
+      if (j.status !== '未标注') { p.expiry = j.expiry; p.status = j.status; }
+    }
+  }
 
   // 《增值税法》2026-01-01 施行后，此前制发的国内环节增值税优惠政策原则上停止执行
   // 对这类历史增值税文件打中性提示标记，避免用户误当现行有效规定
