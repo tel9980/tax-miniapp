@@ -15,24 +15,26 @@ App({
   },
 
   async prefetch() {
-    try {
-      const [p, v, c, i] = await Promise.all([
-        api.getPolicies(),
-        api.getVatContinuity(),
-        api.getCitContinuity(),
-        api.getIitContinuity()
-      ]);
-      this.globalData.policies = p;
-      this.globalData.vat = v;
-      this.globalData.cit = c;
-      this.globalData.iit = i;
-      this._saveCache('policies', p);
-      this._saveCache('vat', v);
-      this._saveCache('cit', c);
-      this._saveCache('iit', i);
-    } catch (e) {
-      // 静默失败，缓存兜底（_loadCache 已处理）
-    }
+    // 用 allSettled：任何一个接口挂了不影响其它三个（原先 Promise.all 是一损俱损）
+    const tasks = [
+      ['policies', api.getPolicies],
+      ['vat', api.getVatContinuity],
+      ['cit', api.getCitContinuity],
+      ['iit', api.getIitContinuity]
+    ];
+    const results = await Promise.allSettled(tasks.map((t) => t[1]()));
+    let ok = 0;
+    results.forEach((r, i) => {
+      const key = tasks[i][0];
+      if (r.status === 'fulfilled' && r.value) {
+        this.globalData[key] = r.value;
+        this._saveCache(key, r.value);
+        ok++;
+      } else {
+        console.warn('[app] 预加载失败 ' + key + ': ' + ((r.reason && r.reason.message) || '未知'));
+      }
+    });
+    console.log('[app] 预加载完成 ' + ok + '/4');
   },
 
   _loadCache() {

@@ -10,11 +10,14 @@ function request(path, method = 'GET') {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(res.data);
         } else {
+          console.warn('[api] ' + path + ' → HTTP ' + res.statusCode);
           reject(new Error('HTTP ' + res.statusCode));
         }
       },
       fail(err) {
-        reject(new Error((err && err.errMsg) || '网络错误'));
+        const msg = (err && err.errMsg) || '网络错误';
+        console.warn('[api] ' + path + ' → ' + msg);
+        reject(new Error(msg));
       }
     });
   });
