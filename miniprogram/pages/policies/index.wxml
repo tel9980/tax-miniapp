@@ -1,4 +1,6 @@
 <view class="page">
+  <view class="boot-probe">[诊断] WXML 已渲染</view>
+
   <!-- 搜索栏 -->
   <view class="search-bar">
     <view class="search-box">

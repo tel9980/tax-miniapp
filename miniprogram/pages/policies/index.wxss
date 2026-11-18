@@ -1,3 +1,14 @@
+/* 临时诊断探针：定位白屏用，问题解决后删除 */
+.boot-probe {
+  margin: 16rpx 24rpx 0;
+  padding: 12rpx 20rpx;
+  font-size: 22rpx;
+  color: #d4380d;
+  background: #fff1f0;
+  border: 2rpx solid #ffa39e;
+  border-radius: 8rpx;
+}
+
 .page {
   padding-bottom: 40rpx;
 }
