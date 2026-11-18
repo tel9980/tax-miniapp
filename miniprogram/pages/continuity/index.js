@@ -1,58 +1,66 @@
 const api = require('../../utils/api');
 
+// 三张对照表共用一套渲染：切换 tab 只换 current，不重复写三份 WXML
+const TABS = [
+  { k: 'vat', n: '增值税衔接表' },
+  { k: 'cit', n: '所得税到期地图' },
+  { k: 'iit', n: '个税到期地图' }
+];
+
 Page({
   data: {
     tab: 'vat',
+    tabs: TABS,
     loading: true,
     error: '',
-    vatLaw: null,
-    citLaw: null,
-    vatGrouped: [],
-    citGrouped: [],
-    vatTotal: 0,
-    citTotal: 0
+    current: null, // { law, grouped }
+    total: 0
   },
 
   onLoad() {
+    this.store = {};
     this.init();
   },
 
   async init() {
     const app = getApp();
-    const vat = app.globalData.vat;
-    const cit = app.globalData.cit;
-    if (vat && cit) {
-      this.applyData(vat, cit);
+    const g = app.globalData;
+    if (g.vat && g.cit && g.iit) {
+      this.applyAll({ vat: g.vat, cit: g.cit, iit: g.iit });
       return;
     }
     this.setData({ loading: true, error: '' });
     try {
-      const [v, c] = await Promise.all([api.getVatContinuity(), api.getCitContinuity()]);
-      app.globalData.vat = v;
-      app.globalData.cit = c;
-      this.applyData(v, c);
+      const [v, c, i] = await Promise.all([
+        api.getVatContinuity(),
+        api.getCitContinuity(),
+        api.getIitContinuity()
+      ]);
+      g.vat = v; g.cit = c; g.iit = i;
+      this.applyAll({ vat: v, cit: c, iit: i });
     } catch (e) {
-      const vc = wx.getStorageSync('vat');
-      const cc = wx.getStorageSync('cit');
-      if (vc && vc.data && cc && cc.data) {
-        this.applyData(vc.data, cc.data);
-      } else {
-        this.setData({ loading: false, error: '加载失败，请稍后重试' });
-      }
+      const cache = {};
+      let ok = true;
+      TABS.forEach((t) => {
+        const c = wx.getStorageSync(t.k);
+        if (c && c.data) cache[t.k] = c.data;
+        else ok = false;
+      });
+      if (ok) this.applyAll(cache);
+      else this.setData({ loading: false, error: '加载失败，请稍后重试' });
     }
   },
 
-  applyData(vat, cit) {
-    this.setData({
-      loading: false,
-      error: '',
-      vatLaw: vat.law || null,
-      citLaw: cit.law || null,
-      vatGrouped: this.groupBy(vat.items || [], vat.groups || []),
-      citGrouped: this.groupBy(cit.items || [], cit.groups || []),
-      vatTotal: vat.total || 0,
-      citTotal: cit.total || 0
+  applyAll(byKey) {
+    TABS.forEach((t) => {
+      const d = byKey[t.k] || {};
+      this.store[t.k] = {
+        law: d.law || null,
+        grouped: this.groupBy(d.items || [], d.groups || []),
+        total: (d.items || []).length
+      };
     });
+    this.showTab(this.data.tab);
   },
 
   groupBy(items, groups) {
@@ -61,8 +69,20 @@ Page({
       .filter((grp) => grp.items.length > 0);
   },
 
+  showTab(k) {
+    const s = this.store[k];
+    if (!s) return;
+    this.setData({
+      tab: k,
+      loading: false,
+      error: '',
+      current: { law: s.law, grouped: s.grouped },
+      total: s.total
+    });
+  },
+
   switchTab(e) {
-    this.setData({ tab: e.currentTarget.dataset.tab });
+    this.showTab(e.currentTarget.dataset.tab);
   },
 
   openUrl(e) {

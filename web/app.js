@@ -391,11 +391,21 @@ const citTab = makeContinuity({
     '<br>法源：<a href="' + esc(d.law.url) + '" target="_blank" rel="noopener">' + esc(d.law.lawName) + '</a>',
 });
 
+const iitTab = makeContinuity({
+  api: '/api/iit-continuity', listId: 'iitList', keyId: 'iitKey',
+  chipsId: 'iitGroupFilters', statsId: 'iitStats',
+  keyHtml: (d) =>
+    '<strong>' + esc(d.law.lawName) + '</strong> 自 ' + esc(d.law.lawFrom) + ' 起施行。' +
+    esc(d.law.keyRule) +
+    '<br>依据：<a href="' + esc(d.law.url) + '" target="_blank" rel="noopener">' + esc(d.law.docNo) + '</a>',
+});
+
 // ===== Tab 切换 =====
 const TABS = [
   { tab: 'tabPolicy', view: 'policyView' },
   { tab: 'tabVat', view: 'vatView', load: () => vatTab.load() },
   { tab: 'tabCit', view: 'citView', load: () => citTab.load() },
+  { tab: 'tabIit', view: 'iitView', load: () => iitTab.load() },
 ];
 
 TABS.forEach((t) => {

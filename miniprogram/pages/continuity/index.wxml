@@ -1,52 +1,29 @@
 <view class="page">
   <!-- tab 切换 -->
   <view class="tab-bar">
-    <view class="tab {{tab === 'vat' ? 'active' : ''}}" data-tab="vat" bindtap="switchTab">增值税衔接表</view>
-    <view class="tab {{tab === 'cit' ? 'active' : ''}}" data-tab="cit" bindtap="switchTab">所得税到期地图</view>
+    <view
+      wx:for="{{tabs}}"
+      wx:key="k"
+      class="tab {{tab === item.k ? 'active' : ''}}"
+      data-tab="{{item.k}}"
+      bindtap="switchTab"
+    >{{item.n}}</view>
   </view>
 
   <view wx:if="{{loading}}" class="empty">加载中…</view>
   <view wx:elif="{{error}}" class="empty">{{error}}</view>
 
-  <!-- 增值税衔接表 -->
-  <block wx:elif="{{tab === 'vat'}}">
-    <view class="law-card" wx:if="{{vatLaw}}">
+  <block wx:elif="{{current}}">
+    <view class="law-card" wx:if="{{current.law}}">
       <view class="law-head">
-        <text class="law-name">{{vatLaw.lawName}}</text>
-        <text class="law-from">自 {{vatLaw.lawFrom}} 施行</text>
+        <text class="law-name">{{current.law.lawName}}</text>
+        <text class="law-from" wx:if="{{current.law.lawFrom}}">自 {{current.law.lawFrom}} 施行</text>
       </view>
-      <view class="law-doc">{{vatLaw.docNo}} · {{vatLaw.docTitle}}</view>
-      <view class="law-rule">{{vatLaw.keyRule}}</view>
+      <view class="law-doc">{{current.law.docNo}}<block wx:if="{{current.law.docTitle}}"> · {{current.law.docTitle}}</block></view>
+      <view class="law-rule">{{current.law.keyRule}}</view>
     </view>
 
-    <view class="group" wx:for="{{vatGrouped}}" wx:key="name" wx:for-item="grp">
-      <view class="group-title">{{grp.name}} <text class="group-count">{{grp.items.length}}</text></view>
-      <view class="cont-item" wx:for="{{grp.items}}" wx:key="title" wx:for-item="it" data-url="{{it.url}}" bindtap="openUrl">
-        <view class="cont-title">
-          <text class="tag {{it.status === '继续有效' || it.status === '长期有效' ? 'st-ok' : it.status === '已停止' || it.status === '已到期' ? 'st-expired' : it.status === '待核实' ? 'st-warn' : 'st-unknown'}}">{{it.status}}</text>
-          <text class="cont-title-text">{{it.title}}</text>
-        </view>
-        <view class="cont-plain" wx:if="{{it.plain}}">{{it.plain}}</view>
-        <view class="cont-meta">
-          <text class="cont-until" wx:if="{{it.until}}">{{it.until === '长期' ? '长期有效' : '至'}}{{it.until === '长期' ? '' : it.until}}</text>
-          <text class="cont-basis" wx:if="{{it.basis}}">依据 {{it.basis}}</text>
-        </view>
-      </view>
-    </view>
-  </block>
-
-  <!-- 所得税到期地图 -->
-  <block wx:elif="{{tab === 'cit'}}">
-    <view class="law-card" wx:if="{{citLaw}}">
-      <view class="law-head">
-        <text class="law-name">{{citLaw.lawName}}</text>
-        <text class="law-from">自 {{citLaw.lawFrom}} 施行</text>
-      </view>
-      <view class="law-doc">{{citLaw.docNo}} · {{citLaw.docTitle}}</view>
-      <view class="law-rule">{{citLaw.keyRule}}</view>
-    </view>
-
-    <view class="group" wx:for="{{citGrouped}}" wx:key="name" wx:for-item="grp">
+    <view class="group" wx:for="{{current.grouped}}" wx:key="name" wx:for-item="grp">
       <view class="group-title">{{grp.name}} <text class="group-count">{{grp.items.length}}</text></view>
       <view class="cont-item" wx:for="{{grp.items}}" wx:key="title" wx:for-item="it" data-url="{{it.url}}" bindtap="openUrl">
         <view class="cont-title">

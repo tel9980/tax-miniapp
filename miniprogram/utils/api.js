@@ -25,5 +25,6 @@ module.exports = {
   getPolicies: () => request('/api/policies'),
   getVatContinuity: () => request('/api/vat-continuity'),
   getCitContinuity: () => request('/api/cit-continuity'),
+  getIitContinuity: () => request('/api/iit-continuity'),
   refresh: () => request('/api/refresh')
 };

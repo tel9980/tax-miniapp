@@ -4,7 +4,8 @@ App({
   globalData: {
     policies: null, // { items, total, preferenceCount, ... }
     vat: null,      // { law, groups, items }
-    cit: null       // { law, groups, items }
+    cit: null,      // { law, groups, items }
+    iit: null       // { law, groups, items }
   },
 
   onLaunch() {
@@ -15,24 +16,27 @@ App({
 
   async prefetch() {
     try {
-      const [p, v, c] = await Promise.all([
+      const [p, v, c, i] = await Promise.all([
         api.getPolicies(),
         api.getVatContinuity(),
-        api.getCitContinuity()
+        api.getCitContinuity(),
+        api.getIitContinuity()
       ]);
       this.globalData.policies = p;
       this.globalData.vat = v;
       this.globalData.cit = c;
+      this.globalData.iit = i;
       this._saveCache('policies', p);
       this._saveCache('vat', v);
       this._saveCache('cit', c);
+      this._saveCache('iit', i);
     } catch (e) {
       // 静默失败，缓存兜底（_loadCache 已处理）
     }
   },
 
   _loadCache() {
-    ['policies', 'vat', 'cit'].forEach((key) => {
+    ['policies', 'vat', 'cit', 'iit'].forEach((key) => {
       if (!this.globalData[key]) {
         const c = wx.getStorageSync(key);
         if (c && c.data) this.globalData[key] = c.data;
