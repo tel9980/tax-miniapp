@@ -37,11 +37,18 @@ Page({
   },
 
   onLoad() {
-    let favs = [];
-    try { favs = wx.getStorageSync(FAV_KEY) || []; } catch (e) {}
-    this.favs = new Set(favs);
-    this.setData({ favCount: this.favs.size });
-    this.init();
+    console.log('[policies] onLoad');
+    try {
+      let favs = [];
+      try { favs = wx.getStorageSync(FAV_KEY) || []; } catch (e) {}
+      // 防御：缓存里若不是数组，new Set() 会抛 "is not iterable"，整页 onLoad 中断
+      this.favs = new Set(Array.isArray(favs) ? favs : []);
+      this.setData({ favCount: this.favs.size });
+      this.init();
+    } catch (e) {
+      console.error('[policies] onLoad 异常', e);
+      this.setData({ loading: false, error: '页面初始化失败：' + ((e && e.message) || e) });
+    }
   },
 
   // 收藏持久化

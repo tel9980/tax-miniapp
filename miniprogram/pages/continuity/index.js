@@ -18,8 +18,14 @@ Page({
   },
 
   onLoad() {
-    this.store = {};
-    this.init();
+    console.log('[continuity] onLoad');
+    try {
+      this.store = {};
+      this.init();
+    } catch (e) {
+      console.error('[continuity] onLoad 异常', e);
+      this.setData({ loading: false, error: '页面初始化失败：' + ((e && e.message) || e) });
+    }
   },
 
   async init() {
