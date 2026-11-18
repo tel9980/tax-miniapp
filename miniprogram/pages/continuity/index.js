@@ -91,12 +91,34 @@ Page({
     this.showTab(e.currentTarget.dataset.tab);
   },
 
+  // 点条目 → 进详情页看正文（后端已抓好官方原文，不必跳浏览器）
   openUrl(e) {
     const url = e.currentTarget.dataset.url;
-    if (!url) return;
+    const title = e.currentTarget.dataset.title || '';
+    const doc = e.currentTarget.dataset.doc || '';
+    if (!url) {
+      wx.showModal({
+        title: '官方库未收录原文',
+        content: '这一条在税务总局法规库检索不到原文，请按文号「' + (doc || title || '—') + '」在官网检索，或拨 12366 确认。',
+        showCancel: false
+      });
+      return;
+    }
+    wx.navigateTo({
+      url: '/pages/detail/detail?url=' + encodeURIComponent(url) + (title ? '&title=' + encodeURIComponent(title) : '')
+    });
+  },
+
+  // 长按 → 快速复制原文链接
+  copyLink(e) {
+    const url = e.currentTarget.dataset.url;
+    if (!url) {
+      this.openUrl(e);
+      return;
+    }
     wx.setClipboardData({
       data: url,
-      success: () => wx.showToast({ title: '原文链接已复制，去浏览器粘贴', icon: 'none' })
+      success: () => wx.showToast({ title: '原文链接已复制', icon: 'none' })
     });
   }
 });

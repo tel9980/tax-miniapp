@@ -778,6 +778,29 @@ export default {
     // 由 Worker 抓官方原文正文转成纯文本段落返回，前端自己渲染。
     if (url.pathname === '/api/detail') {
       const id = url.searchParams.get('id') || '';
+      const rawUrl = url.searchParams.get('url') || '';
+
+      // 按 url 直取：衔接表（增值税/所得税/个税）的条目没有政策 id，只带官方原文链接
+      if (!id && rawUrl) {
+        let u;
+        try {
+          u = new URL(rawUrl);
+        } catch (e) {
+          return json({ ok: false, error: 'bad_url' }, 400);
+        }
+        if (u.protocol !== 'https:' && u.protocol !== 'http:') return json({ ok: false, error: 'bad_url' }, 400);
+        // 只允许税务系统官方站点，避免被当成任意网页代理
+        if (!/(^|\.)chinatax\.gov\.cn$/i.test(u.hostname)) {
+          return json({ ok: false, error: 'host_not_allowed' }, 400);
+        }
+        const key = 'd:u:' + u.href;
+        const cached = await env.POLICIES.get(key, 'json').catch(() => null);
+        if (cached && cached.ok) return json(cached);
+        const d = await fetchDetail({ url: u.href, title: url.searchParams.get('title') || '' });
+        if (d.ok) ctx.waitUntil(env.POLICIES.put(key, JSON.stringify(d)).catch(() => {}));
+        return json(d);
+      }
+
       if (!id) return json({ ok: false, error: 'missing_id' }, 400);
       const hit = await env.POLICIES.get('d:' + id, 'json').catch(() => null);
       if (hit && hit.ok) return json(hit);

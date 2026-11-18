@@ -1,5 +1,12 @@
 const api = require('../../utils/api');
 
+// 参数可能被框架解过一次，也可能没解，这里两种都兜住
+function safeDecode(s) {
+  if (!s) return '';
+  if (s.indexOf('://') >= 0) return s;
+  try { return decodeURIComponent(s); } catch (e) { return s; }
+}
+
 // 小程序里不能直接打开外部网页（web-view 要求已备案的业务域名），
 // 所以详情页由后端抓官方原文正文，这里自己渲染，点开就能看内容。
 Page({
@@ -13,6 +20,17 @@ Page({
 
   onLoad(query) {
     const id = (query && query.id) || '';
+    const rawUrl = safeDecode((query && query.url) || '');
+    const rawTitle = safeDecode((query && query.title) || '');
+
+    // 衔接表进来的：没有政策 id，直接按官方原文链接抓正文
+    if (rawUrl) {
+      this.setData({ url: rawUrl });
+      wx.setNavigationBarTitle({ title: '政策原文' });
+      this.loadByUrl(rawUrl, rawTitle);
+      return;
+    }
+
     const app = getApp();
     const list = (app && app.globalData && app.globalData.policies && app.globalData.policies.items) || [];
     const hit = list.find((p) => p.id === id);
@@ -26,6 +44,33 @@ Page({
     }
     this.id = id;
     this.load(id);
+  },
+
+  loadByUrl(url, title) {
+    this.setData({ loading: true, error: '' });
+    api.getDetailByUrl(url, title)
+      .then((d) => {
+        if (!d || !d.ok) {
+          const map = {
+            empty: '没能取到正文，可以复制链接到浏览器查看。',
+            host_not_allowed: '不支持的链接来源。',
+            bad_url: '链接格式不对。'
+          };
+          this.setData({
+            loading: false,
+            error: map[d && d.error] || ('正文抓取失败（' + ((d && d.error) || '未知错误') + '），可复制链接到浏览器查看。'),
+            detail: d || null
+          });
+          return;
+        }
+        this.setData({ loading: false, detail: d, url: d.url || url, docNo: d.docNo || '' });
+      })
+      .catch((e) => {
+        this.setData({
+          loading: false,
+          error: '网络不通（' + ((e && e.message) || '请求失败') + '）。如果是开发者工具，记得勾选「不校验合法域名」。'
+        });
+      });
   },
 
   load(id) {
@@ -56,7 +101,8 @@ Page({
   },
 
   retry() {
-    if (this.id) this.load(this.id);
+    if (this.data.url) this.loadByUrl(this.data.url, '');
+    else if (this.id) this.load(this.id);
   },
 
   copyUrl() {

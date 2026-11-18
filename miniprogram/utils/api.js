@@ -30,5 +30,7 @@ module.exports = {
   getCitContinuity: () => request('/api/cit-continuity'),
   getIitContinuity: () => request('/api/iit-continuity'),
   getDetail: (id) => request('/api/detail?id=' + encodeURIComponent(id)),
+  getDetailByUrl: (url, title) => request('/api/detail?url=' + encodeURIComponent(url)
+    + (title ? '&title=' + encodeURIComponent(title) : '')),
   refresh: () => request('/api/refresh')
 };
