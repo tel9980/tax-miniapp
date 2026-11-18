@@ -1,0 +1,21 @@
+services:
+  tax-api:
+    image: node:20-alpine
+    container_name: tax-api
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - ./data:/app/data
+    command: node server/index.js
+    environment:
+      - PORT=8787
+      - DAILY_HOUR=9
+    # 只绑回环，公网流量必须经过 nginx
+    ports:
+      - "127.0.0.1:8787:8787"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

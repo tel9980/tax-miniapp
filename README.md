@@ -76,6 +76,7 @@
 | `docs/技术架构.md` | 数据源接口、解析规则、已知限制 |
 | `docs/CF网页版部署指南.md` | Cloudflare 部署、抓取、故障排查、回滚 |
 | `docs/阿里云部署指南.md` | 阿里云部署 + 备案接入 + Nginx/HTTPS（小程序合规路线） |
+| `deploy/` | 阿里云 Ubuntu 部署即用件：`docker-compose.yml` / `nginx.conf` / 一页纸步骤 |
 
 ## 数据源细节
 
