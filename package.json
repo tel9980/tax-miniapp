@@ -1,0 +1,15 @@
+{
+  "name": "tax-miniapp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "税收优惠政策库：Cloudflare Worker 版 + 普通 Node 服务器版共用同一套抓取逻辑",
+  "scripts": {
+    "start": "node server/index.js",
+    "smoke": "node scripts/smoke.mjs",
+    "smoke:full": "node scripts/smoke.mjs --full"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

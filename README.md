@@ -70,9 +70,12 @@
 | `web/index.html` + `web/app.js` | 网页版前端（政策库 + 三张对照表 / 筛选 / 搜索 / 收藏） |
 | `miniprogram/` | **微信小程序**（政策库 + 三张对照表，`config.js` 配后端地址） |
 | `wrangler.toml` | Cloudflare 部署配置（Worker + assets + 自定义域名 + cron） |
+| `server/index.js` | **普通 Node 服务器版入口**（阿里云 / 任意 VPS），复用同一套 `worker/*.js` |
+| `package.json` | Node 版启动配置（零依赖，`npm start` / `node server/index.js`） |
 | `scripts/smoke.mjs` | 本地自测脚本（`node scripts/smoke.mjs [--full]`） |
 | `docs/技术架构.md` | 数据源接口、解析规则、已知限制 |
-| `docs/CF网页版部署指南.md` | 部署、抓取、故障排查、回滚 |
+| `docs/CF网页版部署指南.md` | Cloudflare 部署、抓取、故障排查、回滚 |
+| `docs/阿里云部署指南.md` | 阿里云部署 + 备案接入 + Nginx/HTTPS（小程序合规路线） |
 
 ## 数据源细节
 
@@ -99,6 +102,20 @@ curl https://jy.1211.cc.cd/api/refresh   # 立即抓一次（也可等次日 09:
 
 > 必须 `unset` 代理（本机内网代理一挂 wrangler 就报 `fetch failed`），必须 source token（否则报 `non-interactive environment`）。完整运维手册见 [docs/CF网页版部署指南.md](docs/CF网页版部署指南.md)。
 
+### 服务器版（阿里云 / 任意 VPS，小程序合规路线）
+
+`server/index.js` 只在本地实现了 Cloudflare 提供的两件事——KV（本地 JSON 文件 `data/kv.json`）和静态资源（本地 `web/` 目录），**`worker/index.js` 一行不用改**。
+
+```bash
+cd /workspace/tax-miniapp
+PORT=8787 node server/index.js        # 零依赖，无需 npm install
+curl http://127.0.0.1:8787/api/policies
+```
+
+- 首次访问会现场抓 15 个官方源（约 20~30 秒），之后写进 `data/kv.json`（约 230KB），重启后读缓存 30ms 级
+- 内置每天 `DAILY_HOUR`（默认 9 点）自动抓取，等价于 CF 的 cron
+- 完整步骤（买服务器 / 备案接入 / systemd / Nginx / certbot HTTPS / 小程序改域名）见 [docs/阿里云部署指南.md](docs/阿里云部署指南.md)
+
 ### 微信小程序
 
 1. 微信开发者工具导入 `/workspace/tax-miniapp`（AppID 已填 `project.config.json`：`wx940d75405673b165`）
@@ -116,7 +133,7 @@ node scripts/smoke.mjs --full   # 额外真实抓一次全量（约 10~30s）
 
 ## 已知限制
 
-1. **小程序上线卡在域名备案**——`wx.request` 只允许备案域名，`jy.1211.cc.cd` 在 Cloudflare 上未备案。开发者工具可用，真机/发布会被拦。出路：换备案域名指向同一 Worker / 静态打包随版本发 / 微信云开发（要钱）。
+1. **小程序上线卡在域名备案**——`wx.request` 只允许备案域名，`jy.1211.cc.cd` 在 Cloudflare 上未备案（且 `.cd` 后缀本身办不了备案）。开发者工具可用，真机/发布会被拦。**现成出路**：已备好的 `server/index.js` 部署到阿里云 + 已备案域名 `1211663.xyz`，见 [docs/阿里云部署指南.md](docs/阿里云部署指南.md)。
 2. **横琴、南沙的区域优惠标「待核实」**——原文件执行至 2025-12-31，总局/财政部/省局三渠道均检索不到延续文件（前海已由深圳税务局 12366 问答确认延续至 2027-12-31）。页面明确标注需人工确认，不猜。
 3. **「优惠」标签是关键词判定**，非官方结论，以原文为准。
 4. **CF 免费计划 CPU 约 10ms**，只能给约 10 条优惠抓真正文摘要，其余为模板摘要。
