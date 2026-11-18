@@ -26,5 +26,6 @@ module.exports = {
   getVatContinuity: () => request('/api/vat-continuity'),
   getCitContinuity: () => request('/api/cit-continuity'),
   getIitContinuity: () => request('/api/iit-continuity'),
+  getDetail: (id) => request('/api/detail?id=' + encodeURIComponent(id)),
   refresh: () => request('/api/refresh')
 };

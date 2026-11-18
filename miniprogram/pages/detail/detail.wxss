@@ -1,0 +1,136 @@
+page {
+  background: #f5f6f7;
+}
+
+.wrap {
+  padding: 24rpx 28rpx 60rpx;
+}
+
+.head {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 28rpx 26rpx;
+  margin-bottom: 20rpx;
+}
+
+.title {
+  font-size: 34rpx;
+  line-height: 1.5;
+  font-weight: 600;
+  color: #1a1d23;
+}
+
+.meta {
+  margin-top: 16rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.docno {
+  font-size: 24rpx;
+  color: #2b6de8;
+  background: #eef3fe;
+  padding: 4rpx 12rpx;
+  border-radius: 6rpx;
+}
+
+.date {
+  font-size: 24rpx;
+  color: #8a8f99;
+}
+
+.dept {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.body {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 8rpx 26rpx 26rpx;
+}
+
+.para {
+  margin-top: 20rpx;
+  font-size: 30rpx;
+  line-height: 1.85;
+  color: #23262d;
+  text-align: justify;
+  word-break: break-word;
+}
+
+.foot {
+  margin-top: 24rpx;
+}
+
+.note {
+  font-size: 22rpx;
+  color: #9aa0a6;
+  text-align: center;
+  margin-bottom: 18rpx;
+}
+
+.btns {
+  display: flex;
+  gap: 16rpx;
+}
+
+.btn {
+  flex: 1;
+  text-align: center;
+  padding: 22rpx 0;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+}
+
+.btn.primary {
+  background: #2b6de8;
+  color: #fff;
+}
+
+.btn.ghost {
+  background: #fff;
+  color: #2b6de8;
+  border: 1rpx solid #cfe0ff;
+}
+
+.state {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 80rpx 40rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: #8a8f99;
+}
+
+.spinner {
+  width: 44rpx;
+  height: 44rpx;
+  margin: 0 auto 24rpx;
+  border: 4rpx solid #e3e8ef;
+  border-top-color: #2b6de8;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.err-title {
+  font-size: 30rpx;
+  color: #23262d;
+  margin-bottom: 16rpx;
+}
+
+.err-msg {
+  font-size: 26rpx;
+  line-height: 1.7;
+  color: #6b7280;
+  margin-bottom: 32rpx;
+}

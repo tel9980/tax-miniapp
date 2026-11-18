@@ -1,7 +1,8 @@
 {
   "pages": [
     "pages/policies/index",
-    "pages/continuity/index"
+    "pages/continuity/index",
+    "pages/detail/detail"
   ],
   "window": {
     "navigationBarTitleText": "税收优惠",

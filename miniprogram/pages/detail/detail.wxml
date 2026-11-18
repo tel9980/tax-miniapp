@@ -1,0 +1,39 @@
+<view class="wrap">
+  <view wx:if="{{loading}}" class="state">
+    <view class="spinner"></view>
+    <text>正在从官方调取原文…</text>
+  </view>
+
+  <block wx:elif="{{detail && detail.ok}}">
+    <view class="head">
+      <view class="title">{{detail.title}}</view>
+      <view class="meta">
+        <text wx:if="{{detail.docNo}}" class="docno">{{detail.docNo}}</text>
+        <text wx:if="{{detail.date}}" class="date">{{detail.date}}</text>
+      </view>
+      <view wx:if="{{detail.department}}" class="dept">{{detail.department}}</view>
+    </view>
+
+    <view class="body">
+      <view class="para" wx:for="{{detail.paragraphs}}" wx:key="index">{{item}}</view>
+    </view>
+
+    <view class="foot">
+      <view class="note">以上为官方原文，以正式发布文本为准</view>
+      <view class="btns">
+        <view class="btn ghost" bindtap="copyDocNo">复制文号</view>
+        <view class="btn primary" bindtap="copyUrl">复制原文链接</view>
+      </view>
+    </view>
+  </block>
+
+  <view wx:else class="state err">
+    <view class="err-title">没能直接显示正文</view>
+    <view class="err-msg">{{error}}</view>
+    <view class="btns">
+      <view class="btn ghost" bindtap="copyDocNo" wx:if="{{docNo}}">复制文号</view>
+      <view class="btn ghost" bindtap="retry">重新加载</view>
+      <view class="btn primary" bindtap="copyUrl" wx:if="{{url}}">复制原文链接</view>
+    </view>
+  </view>
+</view>

@@ -10,6 +10,7 @@
 import { VAT_LAW, VAT_GROUPS, VAT_CONTINUITY, withUrl } from './vatContinuity.js';
 import { CIT_LAW, CIT_GROUPS, CIT_CONTINUITY, citWithUrl } from './citContinuity.js';
 import { IIT_LAW, IIT_GROUPS, IIT_CONTINUITY, iitWithUrl } from './iitContinuity.js';
+import { fetchDetail } from './detail.js';
 
 const COLUMNS = [
   { code: 'c102416', name: '财税文件',         channelId: '2cb303fdee614232b79552d52bb057d6' },
@@ -771,6 +772,22 @@ export default {
         total: IIT_CONTINUITY.length,
         updatedAt: new Date().toISOString(),
       });
+    }
+
+    // 单篇政策正文：小程序不能直接打开外部网页（web-view 要求备案域名），
+    // 由 Worker 抓官方原文正文转成纯文本段落返回，前端自己渲染。
+    if (url.pathname === '/api/detail') {
+      const id = url.searchParams.get('id') || '';
+      if (!id) return json({ ok: false, error: 'missing_id' }, 400);
+      const hit = await env.POLICIES.get('d:' + id, 'json').catch(() => null);
+      if (hit && hit.ok) return json(hit);
+      const data = await readKV(env);
+      const p = (data?.items || []).find((x) => x.id === id);
+      if (!p) return json({ ok: false, error: 'not_found' }, 404);
+      if (!p.url) return json({ ok: false, error: 'no_url', policy: { title: p.title, docNo: p.docNo, date: p.date } });
+      const d = await fetchDetail(p);
+      if (d.ok) ctx.waitUntil(env.POLICIES.put('d:' + id, JSON.stringify(d)).catch(() => {}));
+      return json(d);
     }
 
     // 手动刷新（强制重新抓取 → 写 KV）
