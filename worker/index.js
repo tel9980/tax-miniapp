@@ -33,6 +33,10 @@ const PER_COLUMN = 50;
 // KV 缓存有效期：24 小时（cron 每天抓一次，24h 内命中率最高；过期走 stale-while-revalidate 兜底）
 const CACHE_TTL_MS = 24 * 3600 * 1000;
 
+// 「新增」标记：记录每条政策首次被抓到的时间，7 天内视为新增（cron 每天对比 diff）
+const SEEN_KEY = 'seen';
+const NEW_DAYS = 7;
+
 // ===== 优惠判定关键词（标题/文号命中即视为「税收优惠」政策）=====
 const PREF_KEYWORDS = [
   '免征', '免税', '减征', '减半', '减按', '降税率', '降低税率', '减税',
@@ -662,12 +666,57 @@ function isFresh(data) {
   return Date.now() - new Date(data.updatedAt).getTime() < CACHE_TTL_MS;
 }
 
+// ===== 新增政策标记（每天 cron 抓取时与上一次快照 diff）=====
+// KV 里存一份 { 政策id: 首次见到的日期 }，每次抓取对比：
+//  - 不在快照里的 → 记为今天首次见到 → isNew = true
+//  - 首次运行（快照不存在）→ 全部记为已见，不标 NEW（避免第一次上线满屏 NEW）
+//  - 超过 NEW_DAYS 天的自动不再是 NEW
+async function applyNewFlags(env, data) {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    let seen = await env.POLICIES.get(SEEN_KEY, 'json');
+    const firstRun = !seen;
+    seen = seen || {};
+    const cutoff = Date.now() - NEW_DAYS * 86400 * 1000;
+    const cutoff30 = Date.now() - 30 * 86400 * 1000;
+    let newCount = 0;
+    for (const p of data.items || []) {
+      const pub = Date.parse(p.date);
+      const recentPub = Number.isFinite(pub) && pub >= cutoff30;
+      if (!seen[p.id]) {
+        // 首次运行：近 30 天发布过的新政策以「今天」入册（后续 7 天保持 NEW），
+        // 老政策回填自身发布日期（永不误标新增）；之后的新政策一律记今天
+        seen[p.id] = (firstRun && !recentPub) ? (p.date || '2000-01-01') : today;
+      }
+      const fs = Date.parse(seen[p.id]);
+      // 首次运行没有历史快照：按发布日期兜底（近 30 天发布的算新增），避免上线首日全无 NEW
+      p.isNew = Number.isFinite(fs) && fs >= cutoff;
+      if (p.isNew) newCount++;
+    }
+    data.newCount = newCount;
+    // 清理快照：只保留当前列表里还在的 id，避免无限膨胀
+    const cur = new Set((data.items || []).map((p) => p.id));
+    for (const k of Object.keys(seen)) if (!cur.has(k)) delete seen[k];
+    await env.POLICIES.put(SEEN_KEY, JSON.stringify(seen));
+  } catch (e) {
+    console.error('applyNewFlags failed:', e?.message || e);
+  }
+  return data;
+}
+
+// 统一落库：先打新增标记，再写缓存
+async function saveAll(env, data) {
+  await applyNewFlags(env, data);
+  await writeKV(env, data);
+  return data;
+}
+
 // ===== Worker 入口 =====
 export default {
   // cron 定时任务：每天抓取最新政策 → 写 KV（配合 wrangler.toml [triggers]）
   async scheduled(event, env, ctx) {
     const data = await fetchAll();
-    await writeKV(env, data);
+    await saveAll(env, data);
     console.log(`[scheduled] 更新完成：${data.total} 条，优惠 ${data.preferenceCount} 条，广东 ${data.gdCount} 条`);
   },
 
@@ -680,12 +729,12 @@ export default {
       if (isFresh(cached)) return json(cached);
       if (cached) {
         ctx.waitUntil((async () => {
-          try { const fresh = await fetchAll(); await writeKV(env, fresh); } catch (e) { console.error('bg refresh failed:', e?.message || e); }
+          try { const fresh = await fetchAll(); await saveAll(env, fresh); } catch (e) { console.error('bg refresh failed:', e?.message || e); }
         })());
         return json(cached);
       }
       const data = await fetchAll();
-      ctx.waitUntil(writeKV(env, data));
+      ctx.waitUntil(saveAll(env, data));
       return json(data);
     }
 
@@ -714,7 +763,7 @@ export default {
     // 手动刷新（强制重新抓取 → 写 KV）
     if (url.pathname === '/api/refresh') {
       const data = await fetchAll();
-      await writeKV(env, data);
+      await saveAll(env, data);
       return json({ ok: true, total: data.total, preferenceCount: data.preferenceCount, gdCount: data.gdCount, source: data.source, updatedAt: data.updatedAt, errors: data.errors });
     }
 

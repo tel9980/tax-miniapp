@@ -128,3 +128,16 @@
   font-size: 22rpx;
   color: #d46b08;
 }
+
+/* 「新增」徽标：cron 每日 diff 出新政策时显示 */
+.new-badge {
+  display: inline-block;
+  margin-right: 8rpx;
+  padding: 0 10rpx;
+  font-size: 20rpx;
+  line-height: 32rpx;
+  font-weight: 700;
+  color: #15803d;
+  background: #dcfce7;
+  border-radius: 8rpx;
+}

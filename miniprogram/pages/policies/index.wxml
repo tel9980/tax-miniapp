@@ -51,6 +51,7 @@
     <view class="policy-card" wx:for="{{visible}}" wx:key="id" data-url="{{item.url}}" bindtap="openUrl">
       <view class="policy-title">
         <text wx:if="{{item.isPreference}}" class="pref-dot">惠</text>
+        <text wx:if="{{item.isNew}}" class="new-badge">NEW</text>
         <text class="title-text">{{item.title}}</text>
       </view>
       <view class="policy-meta">

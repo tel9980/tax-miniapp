@@ -14,9 +14,9 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 
 let policies = [];
 const PAGE_SIZE = 40;                 // 首屏/每批渲染条数，避免 300+ 条一次性渲染卡顿
-const FILTER_KEYS = ['tax', 'type', 'region', 'area', 'status', 'prefOnly'];
+const FILTER_KEYS = ['tax', 'type', 'region', 'area', 'status', 'prefOnly', 'newOnly'];
 const state = (() => {
-  const s = { q: '', tax: '全部', type: '全部', region: '全部', area: '全部', status: '全部', prefOnly: true, shown: PAGE_SIZE };
+  const s = { q: '', tax: '全部', type: '全部', region: '全部', area: '全部', status: '全部', prefOnly: true, newOnly: false, shown: PAGE_SIZE };
   try { // 记住上次筛选，二次访问无需重新点
     const saved = JSON.parse(localStorage.getItem('tax-filter') || '{}');
     FILTER_KEYS.forEach((k) => { if (k in saved) s[k] = saved[k]; });
@@ -44,6 +44,7 @@ async function load() {
   buildStatusChips();
   buildTypeChips();
   buildTaxChips();
+  buildNewChip();
   $('prefToggle').classList.toggle('on', state.prefOnly);
   render();
 }
@@ -55,6 +56,22 @@ function updateBadge(d) {
     try { t = new Date(d.updatedAt).toLocaleString('zh-CN', { hour12: false }); } catch (e) {}
   }
   $('badge').textContent = `已同步 ${d?.total ?? policies.length} 条 · 优惠 ${d?.preferenceCount ?? '?'} 条 · ${src} · ${t}`;
+}
+
+// 「近 7 天新增」筛选 chip（数据来自 cron 每日 diff）
+function buildNewChip() {
+  const holder = $('newFilters');
+  if (!holder) return;
+  holder.innerHTML = '';
+  const c = document.createElement('div');
+  c.className = 'chip new-chip' + (state.newOnly ? ' active' : '');
+  c.textContent = '🆕 新增政策';
+  c.addEventListener('click', () => {
+    state.newOnly = !state.newOnly;
+    c.classList.toggle('active', state.newOnly);
+    render();
+  });
+  holder.appendChild(c);
 }
 
 // ===== 筛选 chips 构建 =====
@@ -158,6 +175,7 @@ function render(resetShown = true) {
   const q = state.q.trim().toLowerCase();
   const filtered = policies.filter((p) => {
     if (state.prefOnly && !p.isPreference) return false;
+    if (state.newOnly && !p.isNew) return false;
     if (state.region !== '全部' && p.region !== state.region) return false;
     if (state.area !== '全部' && p.area !== state.area) return false;
     if (state.status !== '全部' && p.status !== state.status) return false;
@@ -168,7 +186,9 @@ function render(resetShown = true) {
   });
 
   const prefCount = filtered.filter((p) => p.isPreference).length;
-  $('stats').innerHTML = `共 <b>${filtered.length}</b> 条${state.prefOnly ? '（仅优惠）' : ''} · 其中优惠 <b>${prefCount}</b> 条`;
+  const newFresh = policies.filter((p) => p.isNew).length;
+  const newPill = newFresh ? ` · <span class="new-pill">🆕 新增 ${newFresh} 条</span>` : '';
+  $('stats').innerHTML = `共 <b>${filtered.length}</b> 条${state.prefOnly ? '（仅优惠）' : ''} · 其中优惠 <b>${prefCount}</b> 条${newPill}`;
 
   if (!filtered.length) {
     $('list').innerHTML = '<div class="empty"><div class="emoji">🔍</div>没有匹配的政策，换个关键词或筛选条件试试</div>';
@@ -186,6 +206,7 @@ function render(resetShown = true) {
     const statusTag = (p.status && p.status !== '未标注')
       ? `<span class="tag status ${stCls}">${esc(p.status)}${p.expiry ? ' ' + esc(p.expiry) : ''}</span>` : '';
     const lvTag = p.effectLevel ? `<span class="tag lv">${esc(p.effectLevel)}</span>` : '';
+    const newTag = p.isNew ? '<span class="tag new">NEW</span>' : '';
     const vatTag = p.vatPre2026 ? `<span class="tag vat">2026前·增值税待核实</span>` : '';
     const summary = (p.plain || p.summary) ? `<div class="summary">${esc(p.plain || p.summary)}</div>` : '';
     const hint = p.linkHint ? `<div class="hint">${esc(p.linkHint)}</div>` : '';
@@ -193,7 +214,7 @@ function render(resetShown = true) {
     const dept = p.department ? esc(p.department) : esc(p.column || '');
     return `
       <a class="item" href="${esc(p.url || 'https://fgk.chinatax.gov.cn/')}" target="_blank" rel="noopener">
-        <div class="title">${esc(p.title)}</div>
+        <div class="title">${newTag}${esc(p.title)}</div>
         ${summary}
         ${hint}
         <div class="meta">${statusTag}${vatTag}${regionTag}${areaTag}${prefTag}${taxTags}${lvTag}</div>
