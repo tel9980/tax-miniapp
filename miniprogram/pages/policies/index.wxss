@@ -141,3 +141,14 @@
   background: #dcfce7;
   border-radius: 8rpx;
 }
+
+/* 收藏星标（catchtap 阻止冒泡，不会触发卡片跳转） */
+.fav-star {
+  display: inline-block;
+  margin-right: 10rpx;
+  font-size: 32rpx;
+  line-height: 1;
+  color: #c9cdd4;
+  vertical-align: middle;
+}
+.fav-star.on { color: #f59e0b; }

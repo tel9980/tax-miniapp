@@ -1,6 +1,7 @@
 const api = require('../../utils/api');
 
 const PAGE_SIZE = 30;
+const FAV_KEY = 'tax-favs';
 const STATUS_OPTIONS = ['全部', '生效中', '即将到期', '已到期', '未标注'];
 
 Page({
@@ -20,6 +21,8 @@ Page({
     type: '全部',
     location: '全部',
     status: '全部',
+    favOnly: false,
+    favCount: 0,
 
     // 选项
     taxOptions: ['全部'],
@@ -34,7 +37,32 @@ Page({
   },
 
   onLoad() {
+    let favs = [];
+    try { favs = wx.getStorageSync(FAV_KEY) || []; } catch (e) {}
+    this.favs = new Set(favs);
+    this.setData({ favCount: this.favs.size });
     this.init();
+  },
+
+  // 收藏持久化
+  saveFavs() {
+    try { wx.setStorageSync(FAV_KEY, [...this.favs]); } catch (e) {}
+    this.setData({ favCount: this.favs.size });
+  },
+
+  // 点星标：catchtap 阻止冒泡，避免触发卡片跳转
+  toggleFav(e) {
+    const id = e.currentTarget.dataset.id;
+    if (!id) return;
+    if (this.favs.has(id)) this.favs.delete(id); else this.favs.add(id);
+    this.saveFavs();
+    this.applyFilter();
+    wx.showToast({ title: this.favs.has(id) ? '已收藏' : '已取消', icon: 'none', duration: 800 });
+  },
+
+  toggleFavOnly() {
+    this.setData({ favOnly: !this.data.favOnly });
+    this.applyFilter();
   },
 
   async init() {
@@ -89,9 +117,11 @@ Page({
   },
 
   applyFilter() {
-    const { all, q, prefOnly, tax, type, location, status } = this.data;
+    const { all, q, prefOnly, tax, type, location, status, favOnly } = this.data;
     const ql = q.trim().toLowerCase();
+    const favs = this.favs || new Set();
     let filtered = all.filter((p) => {
+      if (favOnly && !favs.has(p.id)) return false;
       if (prefOnly && !p.isPreference) return false;
       if (tax !== '全部' && (p.taxTypes || []).indexOf(tax) < 0) return false;
       if (type !== '全部' && p.prefType !== type) return false;
@@ -116,6 +146,7 @@ Page({
       if (pa !== pb) return pb - pa;
       return (b.date || '').localeCompare(a.date || '');
     });
+    filtered = filtered.map((p) => (favs.has(p.id) ? { ...p, isFav: true } : { ...p, isFav: false }));
     this.setData({
       filtered,
       shown: PAGE_SIZE,

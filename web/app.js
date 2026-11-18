@@ -14,9 +14,13 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 
 let policies = [];
 const PAGE_SIZE = 40;                 // 首屏/每批渲染条数，避免 300+ 条一次性渲染卡顿
-const FILTER_KEYS = ['tax', 'type', 'region', 'area', 'status', 'prefOnly', 'newOnly'];
+const FILTER_KEYS = ['tax', 'type', 'region', 'area', 'status', 'prefOnly', 'newOnly', 'favOnly'];
+const FAV_KEY = 'tax-favs';
+let favs = new Set();
+try { favs = new Set(JSON.parse(localStorage.getItem(FAV_KEY) || '[]')); } catch (e) {}
+function saveFavs() { try { localStorage.setItem(FAV_KEY, JSON.stringify([...favs])); } catch (e) {} }
 const state = (() => {
-  const s = { q: '', tax: '全部', type: '全部', region: '全部', area: '全部', status: '全部', prefOnly: true, newOnly: false, shown: PAGE_SIZE };
+  const s = { q: '', tax: '全部', type: '全部', region: '全部', area: '全部', status: '全部', prefOnly: true, newOnly: false, favOnly: false, shown: PAGE_SIZE };
   try { // 记住上次筛选，二次访问无需重新点
     const saved = JSON.parse(localStorage.getItem('tax-filter') || '{}');
     FILTER_KEYS.forEach((k) => { if (k in saved) s[k] = saved[k]; });
@@ -45,6 +49,7 @@ async function load() {
   buildTypeChips();
   buildTaxChips();
   buildNewChip();
+  bindFavClicks();
   $('prefToggle').classList.toggle('on', state.prefOnly);
   render();
 }
@@ -58,11 +63,12 @@ function updateBadge(d) {
   $('badge').textContent = `已同步 ${d?.total ?? policies.length} 条 · 优惠 ${d?.preferenceCount ?? '?'} 条 · ${src} · ${t}`;
 }
 
-// 「近 7 天新增」筛选 chip（数据来自 cron 每日 diff）
+// 快捷筛选 chips：「新增政策」（cron 每日 diff）+ 「我的收藏」（本地存储）
 function buildNewChip() {
   const holder = $('newFilters');
   if (!holder) return;
   holder.innerHTML = '';
+
   const c = document.createElement('div');
   c.className = 'chip new-chip' + (state.newOnly ? ' active' : '');
   c.textContent = '🆕 新增政策';
@@ -72,6 +78,34 @@ function buildNewChip() {
     render();
   });
   holder.appendChild(c);
+
+  const f = document.createElement('div');
+  f.className = 'chip fav-chip' + (state.favOnly ? ' active' : '');
+  f.textContent = favs.size ? `★ 我的收藏 ${favs.size}` : '★ 我的收藏';
+  f.addEventListener('click', () => {
+    state.favOnly = !state.favOnly;
+    f.classList.toggle('active', state.favOnly);
+    render();
+  });
+  holder.appendChild(f);
+}
+
+// 收藏点击：事件委托（卡片整体是 <a>，必须阻止跳转）
+function bindFavClicks() {
+  const list = $('list');
+  if (!list || list.dataset.favBound) return;
+  list.dataset.favBound = '1';
+  list.addEventListener('click', (e) => {
+    const btn = e.target.closest('.fav-btn');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const id = btn.dataset.fav;
+    if (favs.has(id)) favs.delete(id); else favs.add(id);
+    saveFavs();
+    buildNewChip();          // 刷新收藏计数
+    render(false);           // 保持已加载条数，不跳回顶部
+  });
 }
 
 // ===== 筛选 chips 构建 =====
@@ -176,6 +210,7 @@ function render(resetShown = true) {
   const filtered = policies.filter((p) => {
     if (state.prefOnly && !p.isPreference) return false;
     if (state.newOnly && !p.isNew) return false;
+    if (state.favOnly && !favs.has(p.id)) return false;
     if (state.region !== '全部' && p.region !== state.region) return false;
     if (state.area !== '全部' && p.area !== state.area) return false;
     if (state.status !== '全部' && p.status !== state.status) return false;
@@ -207,6 +242,8 @@ function render(resetShown = true) {
       ? `<span class="tag status ${stCls}">${esc(p.status)}${p.expiry ? ' ' + esc(p.expiry) : ''}</span>` : '';
     const lvTag = p.effectLevel ? `<span class="tag lv">${esc(p.effectLevel)}</span>` : '';
     const newTag = p.isNew ? '<span class="tag new">NEW</span>' : '';
+    const favOn = favs.has(p.id);
+    const favBtn = `<span class="fav-btn${favOn ? ' on' : ''}" data-fav="${esc(p.id)}" title="${favOn ? '取消收藏' : '收藏'}">${favOn ? '★' : '☆'}</span>`;
     const vatTag = p.vatPre2026 ? `<span class="tag vat">2026前·增值税待核实</span>` : '';
     const summary = (p.plain || p.summary) ? `<div class="summary">${esc(p.plain || p.summary)}</div>` : '';
     const hint = p.linkHint ? `<div class="hint">${esc(p.linkHint)}</div>` : '';
@@ -214,7 +251,7 @@ function render(resetShown = true) {
     const dept = p.department ? esc(p.department) : esc(p.column || '');
     return `
       <a class="item" href="${esc(p.url || 'https://fgk.chinatax.gov.cn/')}" target="_blank" rel="noopener">
-        <div class="title">${newTag}${esc(p.title)}</div>
+        <div class="title">${favBtn}${newTag}${esc(p.title)}</div>
         ${summary}
         ${hint}
         <div class="meta">${statusTag}${vatTag}${regionTag}${areaTag}${prefTag}${taxTags}${lvTag}</div>

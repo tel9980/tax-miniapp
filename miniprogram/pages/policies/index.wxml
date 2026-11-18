@@ -35,6 +35,13 @@
     </view>
   </scroll-view>
 
+  <!-- 快捷筛选：收藏 -->
+  <scroll-view scroll-x class="chip-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="chip-row">
+      <view class="chip {{favOnly ? 'active' : ''}}" bindtap="toggleFavOnly">★ 我的收藏 {{favCount}}</view>
+    </view>
+  </scroll-view>
+
   <!-- 筛选：有效期状态 -->
   <scroll-view scroll-x class="chip-scroll" enhanced show-scrollbar="{{false}}">
     <view class="chip-row">
@@ -50,6 +57,7 @@
   <view wx:else>
     <view class="policy-card" wx:for="{{visible}}" wx:key="id" data-url="{{item.url}}" bindtap="openUrl">
       <view class="policy-title">
+        <text class="fav-star {{item.isFav ? 'on' : ''}}" data-id="{{item.id}}" catchtap="toggleFav">{{item.isFav ? '★' : '☆'}}</text>
         <text wx:if="{{item.isPreference}}" class="pref-dot">惠</text>
         <text wx:if="{{item.isNew}}" class="new-badge">NEW</text>
         <text class="title-text">{{item.title}}</text>
