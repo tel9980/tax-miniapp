@@ -20,20 +20,32 @@
 
     <view class="foot">
       <view class="note">以上为官方原文，以正式发布文本为准</view>
-      <view class="btns">
-        <view class="btn ghost" bindtap="copyDocNo">复制文号</view>
-        <view class="btn primary" bindtap="copyUrl">复制原文链接</view>
+      <view class="pick" wx:if="{{detail.docNo}}">
+        <text class="pick-label">文号</text>
+        <text class="pick-val" user-select="{{true}}">{{detail.docNo}}</text>
       </view>
+      <view class="pick" wx:if="{{url}}">
+        <text class="pick-label">原文链接</text>
+        <text class="pick-val" user-select="{{true}}">{{url}}</text>
+      </view>
+      <view class="pick-tip">长按上面文字即可选中，用系统菜单复制</view>
     </view>
   </block>
 
   <view wx:else class="state err">
     <view class="err-title">没能直接显示正文</view>
     <view class="err-msg">{{error}}</view>
+    <view class="pick" wx:if="{{docNo}}">
+      <text class="pick-label">文号</text>
+      <text class="pick-val" user-select="{{true}}">{{docNo}}</text>
+    </view>
+    <view class="pick" wx:if="{{url}}">
+      <text class="pick-label">原文链接</text>
+      <text class="pick-val" user-select="{{true}}">{{url}}</text>
+    </view>
+    <view class="pick-tip" wx:if="{{docNo || url}}">长按上面文字即可选中，用系统菜单复制</view>
     <view class="btns">
-      <view class="btn ghost" bindtap="copyDocNo" wx:if="{{docNo}}">复制文号</view>
       <view class="btn ghost" bindtap="retry">重新加载</view>
-      <view class="btn primary" bindtap="copyUrl" wx:if="{{url}}">复制原文链接</view>
     </view>
   </view>
 </view>

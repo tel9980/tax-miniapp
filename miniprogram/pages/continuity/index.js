@@ -109,16 +109,4 @@ Page({
     });
   },
 
-  // 长按 → 快速复制原文链接
-  copyLink(e) {
-    const url = e.currentTarget.dataset.url;
-    if (!url) {
-      this.openUrl(e);
-      return;
-    }
-    wx.setClipboardData({
-      data: url,
-      success: () => wx.showToast({ title: '原文链接已复制', icon: 'none' })
-    });
-  }
 });

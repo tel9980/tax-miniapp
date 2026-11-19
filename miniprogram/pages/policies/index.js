@@ -193,23 +193,6 @@ Page({
     wx.navigateTo({ url: '/pages/detail/detail?id=' + encodeURIComponent(id) });
   },
 
-  // 长按卡片 → 快速复制原文链接
-  copyLink(e) {
-    const url = e.currentTarget.dataset.url;
-    const doc = e.currentTarget.dataset.doc;
-    if (!url) {
-      wx.showModal({
-        title: '官方库未收录原文',
-        content: '这条政策的原文在国家税务总局法规库检索不到，请按文号「' + (doc || '—') + '」在官网检索，或拨 12366 确认。',
-        showCancel: false
-      });
-      return;
-    }
-    wx.setClipboardData({
-      data: url,
-      success: () => wx.showToast({ title: '原文链接已复制，去浏览器粘贴', icon: 'none' })
-    });
-  },
 
   onPullDownRefresh() {
     api.getPolicies().then((data) => {

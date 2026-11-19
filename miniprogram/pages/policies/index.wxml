@@ -57,7 +57,7 @@
   <view wx:elif="{{visible.length === 0}}" class="empty">没有匹配的政策</view>
 
   <view wx:else>
-    <view class="policy-card" wx:for="{{visible}}" wx:key="id" data-id="{{item.id}}" data-url="{{item.url}}" data-doc="{{item.docNo}}" bindtap="openUrl" bindlongpress="copyLink">
+    <view class="policy-card" wx:for="{{visible}}" wx:key="id" data-id="{{item.id}}" data-url="{{item.url}}" data-doc="{{item.docNo}}" bindtap="openUrl">
       <view class="policy-title">
         <text class="fav-star {{item.isFav ? 'on' : ''}}" data-id="{{item.id}}" catchtap="toggleFav">{{item.isFav ? '★' : '☆'}}</text>
         <text wx:if="{{item.isPreference}}" class="pref-dot">惠</text>

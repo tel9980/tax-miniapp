@@ -105,23 +105,4 @@ Page({
     else if (this.id) this.load(this.id);
   },
 
-  copyUrl() {
-    if (!this.data.url) {
-      wx.showToast({ title: '这条没有原文链接', icon: 'none' });
-      return;
-    }
-    wx.setClipboardData({
-      data: this.data.url,
-      success: () => wx.showToast({ title: '链接已复制，去浏览器粘贴', icon: 'none' })
-    });
-  },
-
-  copyDocNo() {
-    const doc = this.data.docNo || (this.data.detail && this.data.detail.docNo) || '';
-    if (!doc) {
-      wx.showToast({ title: '这条没有文号', icon: 'none' });
-      return;
-    }
-    wx.setClipboardData({ data: doc, success: () => wx.showToast({ title: '文号已复制', icon: 'none' }) });
-  }
 });

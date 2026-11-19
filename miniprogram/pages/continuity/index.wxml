@@ -25,7 +25,7 @@
 
     <view class="group" wx:for="{{current.grouped}}" wx:key="name" wx:for-item="grp">
       <view class="group-title">{{grp.name}} <text class="group-count">{{grp.items.length}}</text></view>
-      <view class="cont-item" wx:for="{{grp.items}}" wx:key="title" wx:for-item="it" data-url="{{it.url}}" data-title="{{it.title}}" data-doc="{{it.docNo || it.basis}}" bindtap="openUrl" bindlongpress="copyLink">
+      <view class="cont-item" wx:for="{{grp.items}}" wx:key="title" wx:for-item="it" data-url="{{it.url}}" data-title="{{it.title}}" data-doc="{{it.docNo || it.basis}}" bindtap="openUrl">
         <view class="cont-title">
           <text class="tag {{it.status === '继续有效' || it.status === '长期有效' ? 'st-ok' : it.status === '已停止' || it.status === '已到期' ? 'st-expired' : it.status === '待核实' ? 'st-warn' : 'st-unknown'}}">{{it.status}}</text>
           <text class="cont-title-text">{{it.title}}</text>
