@@ -96,7 +96,10 @@ function pickPlain(paragraphs, title) {
     .map((t) => t.replace(/\s+/g, ' ').trim())
     .filter((t) => t.length >= 24 && t !== title && !/^[\d一二三四五六七八九十]+[、.]/.test(t.slice(0, 3)))
     // 纯引用段（罗列一串《…》）不是摘要
-    .filter((t) => (t.match(/《/g) || []).length <= 2);
+    .filter((t) => (t.match(/《/g) || []).length <= 2)
+    // 「关于《某文件》的解读/说明」这类尾巴段落不是摘要
+    .filter((t) => !/^关于?《[^》]{6,}》的?(解读|说明|答记者问|政策解读)[。.]?$/.test(t))
+    .filter((t) => !/^(解读|政策解读|相关解读)[：:]/.test(t));
 
   const finish = (t) => {
     let s = t.replace(/\s+/g, ' ').trim();
@@ -121,11 +124,16 @@ function pickPlain(paragraphs, title) {
 }
 
 // ---------- 抓一篇 ----------
-async function enrichOne(item) {
+async function enrichOne(item, attempt = 0) {
   const res = await fetch(item.url, {
     headers: { 'User-Agent': UA, Referer: 'https://fgk.chinatax.gov.cn/zcfgk/' },
     redirect: 'follow',
   });
+  // 官网会对高频访问限流（429/403/5xx）：退避重试，别把限流当成「这条没内容」
+  if (!res.ok && [403, 429, 500, 502, 503, 504].includes(res.status) && attempt < 2) {
+    await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+    return enrichOne(item, attempt + 1);
+  }
   if (!res.ok) throw new Error('HTTP ' + res.status);
   const html = await res.text();
   const paragraphs = extractBody(html);
@@ -194,6 +202,16 @@ async function main() {
   }
 
   await Promise.all(Array.from({ length: CONC }, worker));
+
+  // 失败保护：整批大面积失败（官网限流/改版）时不要覆盖已有的好数据
+  const rate = items.length ? ok / items.length : 0;
+  if (items.length > 20 && rate < 0.6) {
+    console.error('');
+    console.error(`✗ 成功率只有 ${(rate * 100).toFixed(0)}%（${ok}/${items.length}），大概率被限流。`);
+    console.error('  为避免覆盖已有的好数据，本次不写入 data/enrich.json。');
+    console.error('  稍等几分钟再跑，或用 CONC=1 降低并发。');
+    process.exit(2);
+  }
 
   const payload = {
     map,
