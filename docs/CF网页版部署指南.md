@@ -41,6 +41,31 @@ curl https://jy.1211.cc.cd/api/refresh
 
 > 页面本身不需要手动刷新：`/api/policies` 有「过期先给旧数据、后台悄悄更新」的机制（stale-while-revalidate），缓存有效期 24 小时。
 
+## 三之二、离线补全（改了抓取逻辑后跑一次）
+
+线上 300+ 条政策的「真实文号 / 有效期 / 一句话摘要」不是 Worker 抓的，是本机跑出来推到 KV 的：
+
+```bash
+node scripts/enrich.mjs
+npx wrangler kv key put --namespace-id=853d9ddc1d7844169f13d085af2290a2 enrich --path=data/enrich.json --remote
+node scripts/smoke.mjs
+```
+
+它写的是独立的 `enrich` 键，每天 cron 重抓政策列表时不会覆盖。详见 `docs/技术架构.md` 第四之二节。
+
+## 三之三、监控（一次配好，长期有效）
+
+`GET /healthz` 数据正常返回 200，异常返回 **503**（KV 空 / 超 36 小时没更新 / 少于 300 条 / 抓取报错）。
+
+用 [UptimeRobot](https://uptimerobot.com/) 免费版：
+
+1. Add New Monitor → Monitor Type 选 `HTTPS`
+2. URL 填 `https://jy.1211.cc.cd/healthz`
+3. Monitoring Interval 选 `5 minutes`
+4. Alert Contacts 填邮箱
+
+以后 cron 挂了、官方源改版抓到 0 条，邮箱会先收到告警，不用等用户来反馈。
+
 ## 四、本地自测（改完代码先跑这个，再部署）
 
 ```bash

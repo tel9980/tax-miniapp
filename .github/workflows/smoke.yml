@@ -1,0 +1,35 @@
+name: smoke
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  # 语法检查：改了任何 JS 都先过这一关，防止低级的括号/引号错误上线
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: node --check 全部 JS
+        run: |
+          fail=0
+          for f in $(find worker server scripts miniprogram -name '*.js' -o -name '*.mjs' | sort); do
+            node --check "$f" || { echo "❌ $f"; fail=1; }
+          done
+          exit $fail
+
+  # 冒烟测试：会真实访问税务总局官网，偶尔被上游限流，所以不阻塞合并
+  smoke:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    needs: syntax
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/smoke.mjs

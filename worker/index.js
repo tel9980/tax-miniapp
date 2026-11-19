@@ -120,6 +120,18 @@ const REGIONAL_KEYWORDS = [
 
 // ===== 高频核心优惠政策有效期对照表（公开确定，标题常不含年份，用关键词补标）=====
 // 这些是用户搜索量最大的政策，有效期稳定（2023 年「延续优化」系列，执行至 2027 年底）
+// 已逐条核实原文的分阶段/延续类政策：标题命中则以此为准，优先于正则提取
+// 用途：同一份文件里含多个时间段（如先免征后减半），正则只会抓到第一个「至YYYY年MM月DD日」
+const EXPIRY_OVERRIDE = [
+  {
+    match: ['新能源汽车车辆购置税'],
+    expiry: '2027-12-31',
+    status: '生效中',
+    plain:
+      '2024年1月1日—2025年12月31日买车免征车购税（每辆乘用车免税额不超3万元），2026年1月1日—2027年12月31日改为减半征收（减税额不超1.5万元）。依据财政部 税务总局 工信部公告2023年第10号。',
+  },
+];
+
 const EFFECTIVE_UNTIL = [
   { match: ['增值税小规模纳税人起征点'], until: '2027-12-31' },
   { match: ['减按1%征收率'], until: '2027-12-31' },
@@ -228,10 +240,11 @@ function parseExpiry(text, date) {
       return end.toISOString().slice(0, 10);
     }
   }
-  // 5. 「十五五」期间 → 2026-2030 规划期，截止 2030-12-31
-  if (text.includes('十五五')) return '2030-12-31';
-  // 6. 「十四五」期间 → 2021-2025 规划期，截止 2025-12-31
-  if (text.includes('十四五')) return '2025-12-31';
+  // 5/6. 「十五五」/「十四五」规划期 —— 仅当文本确属税收优惠语境才套用，
+  // 否则会把《“十四五”全民医疗保障规划》这类非税收文件误标成「已到期」
+  const planCtx = /税收|税费|减免|优惠|扣除|退税|免征|抵免|税率/.test(text);
+  if (planCtx && text.includes('十五五')) return '2030-12-31';
+  if (planCtx && text.includes('十四五')) return '2025-12-31';
   // 7. 「YYYY—YYYY年」范围式（如「2026—2027年」「2025年度—2027年度」）→ 取结束年份 12-31
   m = text.match(/(\d{4})\s*(?:年(?:度)?)?\s*[—–\-~至到]\s*(\d{4})\s*年/);
   if (m && +m[2] > +m[1] && +m[2] >= 2024 && +m[2] <= 2035) return `${m[2]}-12-31`;
@@ -255,6 +268,14 @@ function judgeStatus(expiryStr) {
 function withExpiry(rec, text, date) {
   // seed/内置条目已显式声明状态（如因增值税法施行而停止执行），以声明为准
   if (rec.status) return rec;
+  // 已核实的分阶段政策：一份文件含多个时段，正则只能抓到一个，用显式表纠正
+  const ov = EXPIRY_OVERRIDE.find((o) => o.match.some((k) => text.includes(k)));
+  if (ov) {
+    rec.expiry = ov.expiry;
+    rec.status = ov.status;
+    if (ov.plain) rec.plain = ov.plain;
+    return rec;
+  }
   const { expiry, status } = judgeStatus(parseExpiry(text, date));
   rec.expiry = expiry;
   rec.status = status;
@@ -513,7 +534,7 @@ async function fetchColumn(channelId, size) {
 }
 
 // 抓取全部（全国 + 广东 + 区域搜索，并行）→ 结构化 → 去重 → 排序
-async function fetchAll() {
+async function fetchAll(env) {
   // 全国（总局 fgk 接口）
   const results = await Promise.allSettled(
     COLUMNS.map((col) => fetchColumn(col.channelId, PER_COLUMN).then((recs) => recs.map((r) => parseRecord(r, col.name))))
@@ -583,7 +604,9 @@ async function fetchAll() {
   }
   dedup.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   // 有 title 就保留；原文链接缺失(官方库未收录)不再当成脏数据丢弃，前端会显示「无链接 + 提示」
-  const clean = dedup.filter((p) => p.title && (p.url || p.docNo));
+  // 同时剔除「解读/图解/必看」这类二手科普稿：政策库只放文件本身，混进来会稀释权威性
+  const NOISE_TITLE = /(的)?解读$|知多少$|必看|一图读懂|图解|秒懂|一文读懂|答记者问|热点问答|政策指引$|收藏！/;
+  const clean = dedup.filter((p) => p.title && (p.url || p.docNo) && !NOISE_TITLE.test(p.title));
 
   // 字段瘦身：不传输前端用不到的字段；summary 并入 plain（plain 优先，避免两份摘要重复传输）
   const list = clean.map((p) => {
@@ -621,6 +644,26 @@ async function fetchAll() {
     }
   }
 
+  // 离线批量补全（本机 scripts/enrich.mjs 抓正文得到的真实文号/有效期/首段摘要）
+  // 存在独立 KV 键 `enrich` 里，每天 cron 重抓不会把它覆盖掉
+  const enrichMap = await readEnrich(env);
+  let enrichedCount = 0;
+  if (enrichMap) {
+    for (const p of list) {
+      const e = enrichMap[p.id];
+      if (!e) continue;
+      let hit = false;
+      if (e.docNo && !p.docNo) { p.docNo = e.docNo; hit = true; }
+      // 模板兜底的假摘要（「…。具体条件与操作以原文为准。」）让位给正文提炼的真摘要
+      if (e.plain && (!p.plain || p.plain.includes('具体条件与操作以原文为准'))) { p.plain = e.plain; hit = true; }
+      if (e.expiry) {
+        const j = judgeStatus(e.expiry);
+        if (j.status !== '未标注') { p.expiry = j.expiry; p.status = j.status; hit = true; }
+      }
+      if (hit) enrichedCount++;
+    }
+  }
+
   // 《增值税法》2026-01-01 施行后，此前制发的国内环节增值税优惠政策原则上停止执行
   // 对这类历史增值税文件打中性提示标记，避免用户误当现行有效规定
   for (const p of list) {
@@ -642,6 +685,7 @@ async function fetchAll() {
     areas,
     updatedAt: new Date().toISOString(),
     errors,
+    enrichCount: enrichedCount,
     version: 'auto',
   };
 }
@@ -650,6 +694,16 @@ async function fetchAll() {
 async function readKV(env) {
   try {
     return await env.POLICIES.get('policies', 'json');
+  } catch {
+    return null;
+  }
+}
+
+// 离线补全表：{ map: { <政策id>: { docNo?, plain?, expiry? } }, updatedAt }
+async function readEnrich(env) {
+  try {
+    const raw = await env.POLICIES.get('enrich', 'json');
+    return (raw && raw.map) || null;
   } catch {
     return null;
   }
@@ -718,7 +772,7 @@ async function saveAll(env, data) {
 export default {
   // cron 定时任务：每天抓取最新政策 → 写 KV（配合 wrangler.toml [triggers]）
   async scheduled(event, env, ctx) {
-    const data = await fetchAll();
+    const data = await fetchAll(env);
     await saveAll(env, data);
     console.log(`[scheduled] 更新完成：${data.total} 条，优惠 ${data.preferenceCount} 条，广东 ${data.gdCount} 条`);
   },
@@ -732,11 +786,11 @@ export default {
       if (isFresh(cached)) return json(cached);
       if (cached) {
         ctx.waitUntil((async () => {
-          try { const fresh = await fetchAll(); await saveAll(env, fresh); } catch (e) { console.error('bg refresh failed:', e?.message || e); }
+          try { const fresh = await fetchAll(env); await saveAll(env, fresh); } catch (e) { console.error('bg refresh failed:', e?.message || e); }
         })());
         return json(cached);
       }
-      const data = await fetchAll();
+      const data = await fetchAll(env);
       ctx.waitUntil(saveAll(env, data));
       return json(data);
     }
@@ -813,11 +867,38 @@ export default {
       return json(d);
     }
 
+    // 健康检查：给 UptimeRobot 这类免费监控用。数据出了问题返回 503，
+    // 这样「cron 挂了 / 抓到 0 条 / 抓取出错」都能被外部监控发现，而不是等用户来报
+    if (url.pathname === '/healthz') {
+      const cached = await readKV(env);
+      const problems = [];
+      if (!cached) {
+        problems.push('kv_empty');
+      } else {
+        const ageH = (Date.now() - new Date(cached.updatedAt || 0).getTime()) / 3600000;
+        if (!Number.isFinite(ageH) || ageH > 36) problems.push('stale_' + Math.round(ageH) + 'h');
+        if (!(cached.total > 300)) problems.push('too_few_items_' + (cached.total || 0));
+        if (Array.isArray(cached.errors) && cached.errors.length) problems.push('scrape_errors_' + cached.errors.length);
+      }
+      const ok = problems.length === 0;
+      return json(
+        {
+          ok,
+          problems,
+          total: cached?.total ?? 0,
+          preferenceCount: cached?.preferenceCount ?? 0,
+          enrichCount: cached?.enrichCount ?? 0,
+          updatedAt: cached?.updatedAt ?? null,
+        },
+        ok ? 200 : 503
+      );
+    }
+
     // 手动刷新（强制重新抓取 → 写 KV）
     if (url.pathname === '/api/refresh') {
-      const data = await fetchAll();
+      const data = await fetchAll(env);
       await saveAll(env, data);
-      return json({ ok: true, total: data.total, preferenceCount: data.preferenceCount, gdCount: data.gdCount, source: data.source, updatedAt: data.updatedAt, errors: data.errors });
+      return json({ ok: true, total: data.total, preferenceCount: data.preferenceCount, gdCount: data.gdCount, source: data.source, enrichCount: data.enrichCount, updatedAt: data.updatedAt, errors: data.errors });
     }
 
     // 其余请求交给静态资产（web/）

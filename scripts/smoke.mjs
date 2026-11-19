@@ -21,6 +21,13 @@ const env = {
 };
 const ctx = { waitUntil: () => {} };
 
+// 把离线补全表也塞进内存 KV，否则本地跑出来的摘要/有效期跟线上不一致
+import { readFileSync, existsSync } from 'node:fs';
+if (existsSync('data/enrich.json')) {
+  kv.set('enrich', readFileSync('data/enrich.json', 'utf8'));
+  console.log('已加载 data/enrich.json（离线补全表）');
+}
+
 const HOME_URL = /^https?:\/\/[^/]+\/?(zcfgk\/?)?$/; // 法规库首页（曾经的 bug：点开落到首页）
 let failed = 0;
 const ok = (cond, msg, extra = '') => {
@@ -49,6 +56,19 @@ ok(p.items.filter((x) => !x.url).length <= 8, `无原文链接条目 ${p.items.f
 ok((p.areas || []).length >= 4, `区域覆盖 ${JSON.stringify(p.areas)}`);
 ok(p.items.some((x) => x.id === 'seed-hq-cit15' && !x.url), '横琴/南沙「无链接但有文号」的条目没被误删');
 ok(p.items.filter((x) => x.isNew).length >= 0, `NEW 标记 ${p.items.filter((x) => x.isNew).length} 条`);
+// 内容质量：不许再用模板拼的假摘要，文号与有效期覆盖率不能倒退
+const tpl = p.items.filter((x) => x.plain && x.plain.includes('具体条件与操作以原文为准')).length;
+ok(tpl <= 2, `模板兜底摘要 ${tpl} 条（≤2，其余全部来自正文）`);
+ok(p.items.filter((x) => x.plain).length > 300, `有「一句话看懂」${p.items.filter((x) => x.plain).length} 条（>300）`);
+const withDoc = p.items.filter((x) => x.docNo).length;
+ok(withDoc / p.total > 0.7, `有发文字号 ${withDoc}/${p.total}（>70%）`);
+const active = p.items.filter((x) => x.status === '生效中' || x.status === '即将到期').length;
+ok(active > 40, `标注了有效期的 ${active} 条（>40）`);
+ok(p.items.filter((x) => x.status === '已到期').length <= 3, `已到期 ${p.items.filter((x) => x.status === '已到期').length} 条（≤3）`);
+
+// ── 健康检查端点 ──
+const h = await get('/healthz');
+ok(h.status === 200 && h.json.ok === true, `/healthz 正常`, JSON.stringify(h.json.problems || []));
 
 // ── 2~4. 三张对照表 ────────────────────────────────────────
 const TABLES = [

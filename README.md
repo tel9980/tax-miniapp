@@ -74,6 +74,9 @@
 | `server/index.js` | **普通 Node 服务器版入口**（阿里云 / 任意 VPS），复用同一套 `worker/*.js` |
 | `package.json` | Node 版启动配置（零依赖，`npm start` / `node server/index.js`） |
 | `scripts/smoke.mjs` | 本地自测脚本（`node scripts/smoke.mjs [--full]`） |
+| `scripts/enrich.mjs` | **离线补全**：本机抓 300+ 篇正文，补真实文号 / 有效期 / 首段摘要 |
+| `data/enrich.json` | 离线补全结果（推送到 KV 的 `enrich` 键，cron 重抓不会覆盖） |
+| `.github/workflows/smoke.yml` | CI：语法检查 + 冒烟测试 |
 | `docs/技术架构.md` | 数据源接口、解析规则、已知限制 |
 | `docs/CF网页版部署指南.md` | Cloudflare 部署、抓取、故障排查、回滚 |
 | `docs/阿里云部署指南.md` | 阿里云部署 + 备案接入 + Nginx/HTTPS（小程序合规路线） |
@@ -86,7 +89,8 @@
 - **广东省税务局**：政策文件 + 最新文件 2 个栏目，服务端渲染 HTML，正则解析列表。
 - **区域专题**：`REGIONAL_SEED` 内置 13 条核心政策（横琴 / 前海 / 南沙企业所得税 15%、个税 15% 免征、大湾区个税），因总局法规库对区域核心文件收录不全，seed 兜底 + 搜索接口补充最新。
 - **优惠判定**：官方接口不返回「是否优惠」字段，用关键词判定（免征 / 免税 / 减征 / 减半 / 减按 / 退税 / 即征即退 / 留抵退税 / 加计扣除 / 抵免 / 减免 / 优惠 / 零税率等）+ 否定词过滤（废止 / 取消 / 失效 / 不再执行等）。
-- **有效期标记**：`parseExpiry` 从标题/摘要正则提取「至 YYYY 年 MM 月 DD 日 / 至 YYYY 年底 / 延续实施至…」，配合 `EFFECTIVE_UNTIL` 对照表补高频政策，判定「生效中 / 即将到期 / 已到期 / 未标注」。
+- **有效期标记**：`parseExpiry` 从标题/摘要正则提取「至 YYYY 年 MM 月 DD 日 / 至 YYYY 年底 / 延续实施至…」，配合 `EFFECTIVE_UNTIL` 对照表补高频政策，判定「生效中 / 即将到期 / 已到期 / 未标注」。**分阶段政策**（如新能源车购置税「先免征后减半」）用 `EXPIRY_OVERRIDE` 逐条核实更正，正则只能抓到第一个日期，不能这样用。
+- **离线补全（关键）**：CF Worker 免费版 CPU 约 10ms，一次请求只能抓十几篇正文，所以线上原本 340+ 条没有有效期、50+ 条只有模板拼的假摘要。解法是把抓正文搬到本机：`node scripts/enrich.mjs` 跑一遍（约 15 秒），结果写 KV 的 `enrich` 键，Worker 每次 `fetchAll` 读出来套用。**每天 cron 重抓不会覆盖**，因为它是独立的 KV 键。
 - **同步策略**：cron 每天 09:00（北京）抓取写 KV；请求时 stale-while-revalidate（KV 过期先返旧数据 + 后台刷新）。KV 缓存 24 小时。
 
 ## 部署
@@ -123,6 +127,32 @@ curl http://127.0.0.1:8787/api/policies
 1. 微信开发者工具导入 `/workspace/tax-miniapp`（AppID 已填 `project.config.json`：`wx940d75405673b165`）
 2. 开发者工具「详情 → 本地设置 → 勾选不校验合法域名」即可直连后端调试
 3. 上线前：`miniprogram/config.js` 的 `API_BASE` 换成**已 ICP 备案**的域名 + 小程序后台加 request 合法域名
+
+## 冷启动 & 离线补全
+
+```bash
+# 1) 补全（本机跑，约 15 秒 / 370 条）。改了抓取逻辑或想刷一遍内容质量时跑
+node scripts/enrich.mjs
+
+# 2) 推到 KV（以后每天 cron 重抓都会自动套用）
+npx wrangler kv key put --namespace-id=853d9ddc1d7844169f13d085af2290a2 enrich --path=data/enrich.json --remote
+
+# 3) 自测：smoke 会读 data/enrich.json，跑出来跟线上一致
+node scripts/smoke.mjs
+```
+
+## 监控
+
+`GET /healthz` 是给外部监控用的健康检查，数据出问题返回 **503**：
+
+| 检查项 | 触发条件 |
+|---|---|
+| `kv_empty` | KV 里没有政策数据 |
+| `stale_Nh` | 数据超过 36 小时没更新（说明 cron 没跑成） |
+| `too_few_items_N` | 抓到的政策少于 300 条（说明官方源改版/抓取失败） |
+| `scrape_errors_N` | 抓取过程有报错 |
+
+接 [UptimeRobot](https://uptimerobot.com/) 免费版：新建 HTTPS 监控 → URL 填 `https://jy.1211.cc.cd/healthz` → 间隔 5 分钟 → 告警邮箱。**它返回 503 就说明数据坏了**，不用等用户来报。
 
 ## 本地自测
 
