@@ -1,6 +1,4 @@
 <view class="page">
-  <view class="boot-probe">[诊断] WXML 已渲染</view>
-
   <!-- 搜索栏 -->
   <view class="search-bar">
     <view class="search-box">
@@ -11,7 +9,7 @@
 
   <!-- 统计 -->
   <view class="stats">
-    <text class="stats-count">共 {{filtered.length}} 条</text>
+    <text class="stats-count">共 {{total}} 条</text>
     <text wx:if="{{prefOnly}}" class="stats-pref">优惠 {{prefCount}} 条</text>
     <text wx:if="{{updatedAtShort}}" class="stats-updated">更新于 {{updatedAtShort}}</text>
   </view>
@@ -54,10 +52,10 @@
   <!-- 列表 -->
   <view wx:if="{{loading}}" class="empty">加载中…</view>
   <view wx:elif="{{error}}" class="empty">{{error}}</view>
-  <view wx:elif="{{visible.length === 0}}" class="empty">没有匹配的政策</view>
+  <view wx:elif="{{items.length === 0}}" class="empty">没有匹配的政策</view>
 
   <view wx:else>
-    <view class="policy-card" wx:for="{{visible}}" wx:key="id" data-id="{{item.id}}" data-url="{{item.url}}" data-doc="{{item.docNo}}" bindtap="openUrl">
+    <view class="policy-card" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}" data-url="{{item.url}}" data-doc="{{item.docNo}}" bindtap="openUrl">
       <view class="policy-title">
         <text class="fav-star {{item.isFav ? 'on' : ''}}" data-id="{{item.id}}" catchtap="toggleFav">{{item.isFav ? '★' : '☆'}}</text>
         <text wx:if="{{item.isPreference}}" class="pref-dot">惠</text>
@@ -65,7 +63,7 @@
         <text class="title-text">{{item.title}}</text>
       </view>
       <view class="policy-meta">
-        <text wx:if="{{item.docNo}}" class="meta-docno">{{item.docNo}}</text>
+        <text wx:if="{{item.docLabel}}" class="meta-docno">{{item.docLabel}}</text>
         <text wx:if="{{item.date}}" class="meta-date">{{item.date}}</text>
       </view>
       <view class="tag-row">
@@ -79,6 +77,8 @@
       <view class="policy-link" wx:if="{{item.linkHint}}">{{item.linkHint}}</view>
     </view>
 
-    <view wx:if="{{hasMore}}" class="load-more" bindtap="loadMore">加载更多（还有 {{filtered.length - shown}} 条）</view>
+    <view wx:if="{{loadingMore}}" class="load-more">加载中…</view>
+    <view wx:elif="{{hasMore}}" class="load-more" bindtap="loadMore">加载更多（{{items.length}}/{{total}}）</view>
+    <view wx:elif="{{items.length > 0}}" class="load-more end">已经到底了 · 共 {{total}} 条</view>
   </view>
 </view>

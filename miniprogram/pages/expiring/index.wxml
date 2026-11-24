@@ -1,0 +1,46 @@
+<view class="page">
+  <view class="banner">
+    <view class="banner-q">{{quarter}}</view>
+    <view class="banner-range">{{start}} ~ {{end}}</view>
+    <view class="banner-count">本季度有 <text class="hl">{{count}}</text> 条优惠到期</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="empty">加载中…</view>
+  <view wx:elif="{{error}}" class="empty">{{error}}</view>
+  <view wx:elif="{{items.length === 0}}" class="empty">本季度没有政策到期 🎉</view>
+
+  <view wx:else>
+    <view class="card" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}" bindtap="openItem">
+      <view class="exp-row">
+        <text class="exp-date">{{item.expiry}}</text>
+        <text wx:if="{{item.left}}" class="exp-left">{{item.left}}</text>
+      </view>
+      <view class="card-title">{{item.title}}</view>
+      <view class="card-meta">
+        <text wx:if="{{item.docLabel}}" class="meta-doc">{{item.docLabel}}</text>
+        <text wx:if="{{item.region}}" class="tag">{{item.region}}</text>
+        <text wx:if="{{item.area}}" class="tag">{{item.area}}</text>
+      </view>
+      <view class="card-plain" wx:if="{{item.plain}}">{{item.plain}}</view>
+      <view class="card-warn">到期后可能不再享受，注意衔接安排</view>
+    </view>
+    <view class="foot" wx:if="{{updatedAtShort}}">数据更新于 {{updatedAtShort}}</view>
+  </view>
+
+  <!-- 等官方发文的政策：写清楚在等什么、去哪儿查 -->
+  <view class="watch" wx:if="{{watch && watch.pending.length > 0}}">
+    <view class="watch-title">⏳ 跟踪中：等官方发文（{{watch.pending.length}} 项）</view>
+    <view class="watch-note">{{watch.note}}</view>
+    <view class="watch-item {{w.found ? 'hit' : ''}}" wx:for="{{watch.pending}}" wx:key="id" wx:for-item="w">
+      <view class="wi-name">{{w.name}}</view>
+      <view class="wi-line"><text class="wi-k">现行依据</text>{{w.basis}}</view>
+      <view class="wi-line"><text class="wi-k">在等什么</text>{{w.expect}}</view>
+      <view class="wi-line"><text class="wi-k">怎么查</text>{{w.howToCheck}}</view>
+      <view class="wi-hit" wx:if="{{w.found}}">⚠️ 疑似发现延续文件：{{w.found.title}}，待人工确认</view>
+    </view>
+    <view class="watch-item done" wx:for="{{watch.resolved}}" wx:key="id" wx:for-item="r">
+      <view class="wi-name">✓ {{r.name}}</view>
+      <view class="wi-line"><text class="wi-k">已延续</text>{{r.basis}}，至 {{r.until}}</view>
+    </view>
+  </view>
+</view>

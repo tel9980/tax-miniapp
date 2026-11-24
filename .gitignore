@@ -4,3 +4,4 @@ node_modules/
 *.log
 data/*
 !data/enrich.json
+!data/enrich-ver.txt

@@ -1,12 +1,18 @@
-/* 临时诊断探针：定位白屏用，问题解决后删除 */
-.boot-probe {
-  margin: 16rpx 24rpx 0;
-  padding: 12rpx 20rpx;
-  font-size: 22rpx;
-  color: #d4380d;
-  background: #fff1f0;
-  border: 2rpx solid #ffa39e;
-  border-radius: 8rpx;
+/* 加载更多 / 到底提示 */
+.load-more {
+  margin: 24rpx 24rpx 0;
+  padding: 24rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: #2b6de8;
+  background: #fff;
+  border-radius: 12rpx;
+}
+.load-more:active { background: #f0f4ff; }
+.load-more.end {
+  color: #b0b4bd;
+  background: transparent;
+  font-size: 24rpx;
 }
 
 .page {

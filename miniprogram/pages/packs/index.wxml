@@ -1,0 +1,33 @@
+<view class="page">
+  <view class="intro">按「我是谁」找优惠，比一条条翻快得多。</view>
+
+  <view wx:if="{{loading}}" class="empty">加载中…</view>
+  <view wx:elif="{{error}}" class="empty">{{error}}</view>
+
+  <view wx:else>
+    <view class="pack" wx:for="{{packs}}" wx:key="id">
+      <view class="pack-head" data-id="{{item.id}}" bindtap="togglePack">
+        <text class="pack-icon">{{item.icon}}</text>
+        <view class="pack-main">
+          <view class="pack-name">{{item.name}}<text class="pack-count">{{item.count}} 条</text></view>
+          <view class="pack-desc">{{item.desc}}</view>
+        </view>
+        <text class="pack-fold">{{openId === item.id ? '收起' : '展开'}}</text>
+      </view>
+
+      <view class="pack-body" wx:if="{{openId === item.id}}">
+        <view class="pack-item" wx:for="{{item.items}}" wx:key="id" wx:for-item="p" data-id="{{p.id}}" bindtap="openItem">
+          <view class="pi-title">{{p.title}}</view>
+          <view class="pi-meta">
+            <text wx:if="{{p.docLabel}}" class="pi-doc">{{p.docLabel}}</text>
+            <text wx:if="{{p.date}}" class="pi-date">{{p.date}}</text>
+            <text wx:if="{{p.status}}" class="tag {{p.status === '生效中' ? 'st-ok' : p.status === '即将到期' ? 'st-soon' : p.status === '已到期' ? 'st-expired' : p.status === '待核实' ? 'st-warn' : 'st-unknown'}}">{{p.status}}</text>
+          </view>
+          <view class="pi-plain" wx:if="{{p.plain}}">{{p.plain}}</view>
+        </view>
+        <view class="pack-tip" wx:if="{{item.count > item.items.length}}">只展示前 {{item.items.length}} 条，更多请回政策库筛选</view>
+      </view>
+    </view>
+    <view class="foot" wx:if="{{updatedAtShort}}">数据更新于 {{updatedAtShort}}</view>
+  </view>
+</view>

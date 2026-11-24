@@ -2,7 +2,9 @@ const api = require('./utils/api');
 
 App({
   globalData: {
-    policies: null, // { items, total, preferenceCount, ... }
+    // 政策库列表不再预加载：首页自己按需拉第一页（40 条 ~19KB），
+    // 预加载全量 371 条等于白占内存。这里只预加载三张衔接表和身份打包。
+    packs: null,    // { packs: [...] }
     vat: null,      // { law, groups, items }
     cit: null,      // { law, groups, items }
     iit: null       // { law, groups, items }
@@ -15,9 +17,9 @@ App({
   },
 
   async prefetch() {
-    // 用 allSettled：任何一个接口挂了不影响其它三个（原先 Promise.all 是一损俱损）
+    // 用 allSettled：任何一个接口挂了不影响其它（原先 Promise.all 是一损俱损）
     const tasks = [
-      ['policies', api.getPolicies],
+      ['packs', api.getPacks],
       ['vat', api.getVatContinuity],
       ['cit', api.getCitContinuity],
       ['iit', api.getIitContinuity]
@@ -38,7 +40,7 @@ App({
   },
 
   _loadCache() {
-    ['policies', 'vat', 'cit', 'iit'].forEach((key) => {
+    ['packs', 'vat', 'cit', 'iit'].forEach((key) => {
       if (!this.globalData[key]) {
         const c = wx.getStorageSync(key);
         if (c && c.data) this.globalData[key] = c.data;

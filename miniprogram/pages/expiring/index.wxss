@@ -1,0 +1,55 @@
+.page { padding: 20rpx 24rpx 60rpx; }
+
+.banner {
+  background: linear-gradient(135deg, #fff4e5, #ffe8cc);
+  border-radius: 16rpx; padding: 28rpx 24rpx; margin-bottom: 24rpx;
+}
+.banner-q { font-size: 32rpx; font-weight: 600; color: #a85600; }
+.banner-range { font-size: 23rpx; color: #b4741f; margin-top: 8rpx; }
+.banner-count { font-size: 26rpx; color: #8a5a12; margin-top: 12rpx; }
+.banner-count .hl { font-size: 34rpx; font-weight: 700; color: #d46b08; }
+
+.empty { padding: 120rpx 0; text-align: center; color: #9aa0a6; font-size: 28rpx; }
+
+.card {
+  background: #fff; border-radius: 16rpx; padding: 24rpx; margin-bottom: 20rpx;
+}
+.card:active { background: #f7f9ff; }
+
+.exp-row { display: flex; align-items: center; margin-bottom: 12rpx; }
+.exp-date { font-size: 26rpx; font-weight: 600; color: #d46b08; }
+.exp-left {
+  font-size: 22rpx; color: #a85600; background: #fff4e5;
+  padding: 2rpx 12rpx; border-radius: 20rpx; margin-left: 14rpx;
+}
+
+.card-title { font-size: 29rpx; color: #1f2328; line-height: 1.5; font-weight: 500; }
+.card-meta { margin-top: 10rpx; display: flex; flex-wrap: wrap; align-items: center; }
+.meta-doc { font-size: 22rpx; color: #6b7280; margin-right: 16rpx; }
+.tag {
+  font-size: 20rpx; color: #2b6de8; background: #eef3ff;
+  padding: 2rpx 10rpx; border-radius: 6rpx; margin-right: 8rpx;
+}
+.card-plain { font-size: 25rpx; color: #4b5563; line-height: 1.6; margin-top: 12rpx; }
+.card-warn { font-size: 22rpx; color: #9aa0a6; margin-top: 14rpx; padding-top: 12rpx; border-top: 2rpx solid #f5f6f7; }
+
+.foot { text-align: center; font-size: 22rpx; color: #b0b4bd; padding: 20rpx 0; }
+
+/* 跟踪清单 */
+.watch { margin-top: 30rpx; }
+.watch-title { font-size: 28rpx; font-weight: 600; color: #1f2328; margin-bottom: 14rpx; }
+.watch-note {
+  font-size: 23rpx; color: #92400e; line-height: 1.7;
+  background: #fffbeb; border: 2rpx solid #fde68a; border-radius: 10rpx;
+  padding: 16rpx 18rpx; margin-bottom: 16rpx;
+}
+.watch-item {
+  background: #fff; border-radius: 12rpx; padding: 20rpx 22rpx;
+  margin-bottom: 16rpx; border-left: 6rpx solid #f59e0b;
+}
+.watch-item.hit { border-left-color: #dc2626; background: #fffbfb; }
+.watch-item.done { border-left-color: #10b981; }
+.wi-name { font-size: 27rpx; font-weight: 600; color: #1f2328; margin-bottom: 10rpx; line-height: 1.5; }
+.wi-line { font-size: 23rpx; color: #6b7280; line-height: 1.7; }
+.wi-k { color: #4b5563; font-weight: 600; margin-right: 10rpx; }
+.wi-hit { font-size: 23rpx; color: #b91c1c; margin-top: 10rpx; line-height: 1.6; }

@@ -12,6 +12,15 @@ const FALLBACK = [
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+// 文号兜底：法律法规本身没有发文字号（只有主席令/国务院令），
+// 直接显示空会让用户以为数据缺失，这里用类型说明顶上。
+function docLabel(p) {
+  if (p.docNo) return p.docNo;
+  if (p.docType === 'law') return '法律法规';
+  if (p.docType === 'qa') return '政策解读';
+  return '';
+}
+
 let policies = [];           // 当前已加载的政策（服务端分页的一页或多页）
 let facets = null;           // 服务端返回的筛选维度（tax/type/region/area/status 各去重值+计数）
 let currentPage = 1;         // 当前页码
@@ -267,22 +276,24 @@ function render() {
     const vatTag = p.vatPre2026 ? `<span class="tag vat">2026前·增值税待核实</span>` : '';
     const summary = (p.plain || p.summary) ? `<div class="summary">${esc(p.plain || p.summary)}</div>` : '';
     const hint = p.linkHint ? `<div class="hint">${esc(p.linkHint)}</div>` : '';
-    const docDate = [p.docNo, p.date].filter(Boolean).join(' · ');
+    const docDate = [docLabel(p), p.date].filter(Boolean).join(' · ');
     const dept = p.department ? esc(p.department) : esc(p.column || '');
-    const arrow = p.url ? ' <span class="arrow">›</span>' : '';
+    const origin = p.url
+      ? `<a class="origin" href="${esc(p.url)}" target="_blank" rel="noopener" title="直接打开官方原文">原文 ↗</a>`
+      : '';
     const body = `
         <div class="title">${favBtn}${newTag}${esc(p.title)}</div>
         ${summary}
         ${hint}
         <div class="meta">${statusTag}${vatTag}${regionTag}${areaTag}${prefTag}${taxTags}${lvTag}</div>
-        <div class="sub"><span>${esc(docDate)}</span><span>${dept}${arrow}</span></div>`;
-    // 官方库未收录原文的政策：不做成链接，避免点开落到官网首页
+        <div class="sub"><span>${esc(docDate)}</span><span>${dept}${origin}</span></div>`;
+    // 官方库未收录原文的政策：不做成可点，避免落到官网首页
     if (!p.url) {
       return `<div class="item nolink">${body}
         <div class="nolink-hint">官方库未收录原文 · 请按文号「${esc(p.docNo || '')}」自行核实，或拨 12366 确认</div>
       </div>`;
     }
-    return `<a class="item" href="${esc(p.url)}" target="_blank" rel="noopener">${body}</a>`;
+    return `<div class="item" data-detail="${esc(p.id)}">${body}</div>`;
   }).join('') + (rest > 0
     ? `<div class="load-more"><button id="loadMoreBtn">加载更多 · 还有 ${rest} 条</button></div>`
     : '');
@@ -340,14 +351,14 @@ function renderPacks(packs, updatedAt) {
       const prefTag = p.isPreference && p.prefType ? `<span class="tag pref">${esc(p.prefType)}</span>` : '';
       const statusTag = p.status && p.status !== '未标注' ? `<span class="tag status">${esc(p.status)}${p.expiry ? ' ' + esc(p.expiry) : ''}</span>` : '';
       const summary = p.plain ? `<div class="summary">${esc(p.plain)}</div>` : '';
-      const docDate = [p.docNo, p.date].filter(Boolean).join(' · ');
+      const docDate = [docLabel(p), p.date].filter(Boolean).join(' · ');
       const body = `
         <div class="title">${esc(p.title)}</div>
         ${summary}
         <div class="meta">${statusTag}${prefTag}${taxTags}</div>
         <div class="sub"><span>${esc(docDate)}</span></div>`;
       if (!p.url) return `<div class="item nolink">${body}<div class="nolink-hint">官方库未收录原文 · 请按文号「${esc(p.docNo || '')}」自行核实，或拨 12366 确认</div></div>`;
-      return `<a class="item" href="${esc(p.url)}" target="_blank" rel="noopener">${body}</a>`;
+      return `<div class="item" data-detail="${esc(p.id)}">${body}</div>`;
     }).join('');
     return `
       <div class="pack-card">
@@ -365,6 +376,9 @@ function renderPacks(packs, updatedAt) {
 // ===== 本季度到期清单 =====
 async function loadExpiring() {
   $('expiringList').innerHTML = '<div class="loading"><div class="spinner"></div>正在统计…</div>';
+  // 到期清单和跟踪清单一起拉，两个都是小接口
+  fetch('/api/watch', { headers: { Accept: 'application/json' } })
+    .then((r) => r.json()).then(renderWatch).catch(() => { $('watchBox').innerHTML = ''; });
   try {
     const r = await fetch('/api/expiring', { headers: { Accept: 'application/json' } });
     const d = await r.json();
@@ -372,6 +386,34 @@ async function loadExpiring() {
   } catch (e) {
     $('expiringList').innerHTML = '<div class="loading">加载失败，请刷新重试</div>';
   }
+}
+
+// 跟踪清单：官方还没发文的那几条，写清楚在等什么、去哪儿查
+function renderWatch(d) {
+  const box = $('watchBox');
+  if (!d || !d.pending) { box.innerHTML = ''; return; }
+  const pend = d.pending.map((w) => {
+    const found = w.found
+      ? `<div class="watch-hit">⚠️ 疑似发现延续文件：${esc(w.found.title)}${w.found.docNo ? '（' + esc(w.found.docNo) + '）' : ''} — 待人工确认</div>`
+      : '';
+    return `<div class="watch-item${w.found ? ' hit' : ''}">
+      <div class="watch-name">${esc(w.name)}</div>
+      <div class="watch-line"><b>现行依据</b>${esc(w.basis)}</div>
+      <div class="watch-line"><b>在等什么</b>${esc(w.expect)}</div>
+      <div class="watch-line"><b>怎么查</b>${esc(w.howToCheck)}</div>
+      ${found}
+    </div>`;
+  }).join('');
+  const resolved = (d.resolved || []).map((r) => `<div class="watch-item done">
+      <div class="watch-name">✓ ${esc(r.name)}</div>
+      <div class="watch-line"><b>已延续</b>${esc(r.basis)}，至 ${esc(r.until)}</div>
+      <div class="watch-line"><b>说明</b>${esc(r.note)}</div>
+    </div>`).join('');
+  box.innerHTML = `
+    <div class="section-title">⏳ 跟踪中：等官方发文（${d.pending.length} 项）</div>
+    <div class="watch-note">${esc(d.note)}</div>
+    ${pend}
+    ${resolved ? `<div class="section-title">✓ 已确认延续</div>${resolved}` : ''}`;
 }
 
 function renderExpiring(d) {
@@ -383,14 +425,14 @@ function renderExpiring(d) {
     const prefTag = p.isPreference && p.prefType ? `<span class="tag pref">${esc(p.prefType)}</span>` : '';
     const regionTag = p.region ? `<span class="tag region">${esc(p.region)}</span>` : '';
     const summary = p.plain ? `<div class="summary">${esc(p.plain)}</div>` : '';
-    const docDate = [p.docNo, p.date].filter(Boolean).join(' · ');
+    const docDate = [docLabel(p), p.date].filter(Boolean).join(' · ');
     const body = `
         <div class="title"><span class="tag status st-soon">${esc(p.expiry)} 到期</span>${esc(p.title)}</div>
         ${summary}
         <div class="meta">${regionTag}${prefTag}${taxTags}</div>
         <div class="sub"><span>${esc(docDate)}</span></div>`;
     if (!p.url) return `<div class="item nolink">${body}<div class="nolink-hint">官方库未收录原文 · 请按文号「${esc(p.docNo || '')}」自行核实，或拨 12366 确认</div></div>`;
-    return `<a class="item" href="${esc(p.url)}" target="_blank" rel="noopener">${body}</a>`;
+    return `<div class="item" data-detail="${esc(p.id)}">${body}</div>`;
   }).join('');
 }
 
@@ -524,6 +566,82 @@ TABS.forEach((t) => {
     });
     if (t.load) t.load();
   });
+});
+
+// ===== 正文详情层（在站内读原文，不跳出网站）=====
+const detailCache = new Map(); // id -> 接口结果，避免来回切换重复请求
+
+function openDetailPanel() {
+  const el = $('detailPanel');
+  el.classList.add('open');
+  el.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+function closeDetailPanel() {
+  const el = $('detailPanel');
+  el.classList.remove('open');
+  el.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+function renderDetail(d, fallbackTitle) {
+  const title = d.title || fallbackTitle || '政策原文';
+  $('detailTitle').textContent = title;
+  const metaBits = [d.docNo, d.date, d.department].filter(Boolean).map((x) => esc(x));
+  const meta = metaBits.length ? `<div class="detail-meta">${metaBits.join(' · ')}</div>` : '';
+  const paras = (d.paragraphs || []).map((t, i) =>
+    `<p${i === 0 ? ' class="lead"' : ''}>${esc(t)}</p>`
+  ).join('');
+  $('detailBody').innerHTML = `<h2>${esc(title)}</h2>${meta}${paras}`;
+  $('detailBody').scrollTop = 0;
+  $('detailFoot').innerHTML = d.url
+    ? `<a href="${esc(d.url)}" target="_blank" rel="noopener">查看官方原文 ↗</a>`
+    : `<span class="nourl">官方库未收录原文</span>`;
+}
+
+function detailError(msg, hint) {
+  $('detailBody').innerHTML = `<div class="detail-tip"><strong>暂时读不到正文</strong><br>${esc(msg)}${
+    hint ? '<br>' + esc(hint) : ''
+  }</div>`;
+  $('detailFoot').innerHTML = '';
+}
+
+async function openDetail(id) {
+  const p = policies.find((x) => x.id === id);
+  $('detailTitle').textContent = p ? p.title : '政策原文';
+  $('detailBody').innerHTML = '<div class="loading"><div class="spinner"></div>正在读取官方原文…</div>';
+  $('detailFoot').innerHTML = '';
+  openDetailPanel();
+
+  if (detailCache.has(id)) { renderDetail(detailCache.get(id), p && p.title); return; }
+
+  try {
+    const r = await fetch('/api/detail?id=' + encodeURIComponent(id), { headers: { Accept: 'application/json' } });
+    const d = await r.json();
+    if (d && d.ok) { detailCache.set(id, d); renderDetail(d, p && p.title); return; }
+    if (d && d.error === 'no_url') {
+      detailError('该政策在官方库没有收录原文链接。', p && p.docNo ? `请按文号「${p.docNo}」在官网检索，或拨 12366 确认。` : '请拨 12366 确认。');
+      return;
+    }
+    detailError('官方页面暂时打不开或正文结构有变化。', '可以点下方按钮直接访问官方页面，或稍后再试。');
+    if (p && p.url) $('detailFoot').innerHTML = `<a href="${esc(p.url)}" target="_blank" rel="noopener">直接打开官方原文 ↗</a>`;
+  } catch (e) {
+    detailError('网络请求失败，请检查网络后重试。');
+    if (p && p.url) $('detailFoot').innerHTML = `<a href="${esc(p.url)}" target="_blank" rel="noopener">直接打开官方原文 ↗</a>`;
+  }
+}
+
+// 卡片点击：事件委托（收藏星标、原文直链要放行）
+document.addEventListener('click', (e) => {
+  if (e.target.closest('.fav-btn') || e.target.closest('.origin')) return;
+  const card = e.target.closest('[data-detail]');
+  if (!card) return;
+  const id = card.dataset.detail;
+  if (id) { e.preventDefault(); openDetail(id); }
+});
+$('detailBack').addEventListener('click', closeDetailPanel);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeDetailPanel();
 });
 
 // 启动

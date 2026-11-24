@@ -19,7 +19,10 @@ const env = {
   },
   ASSETS: { fetch: () => new Response('assets') },
 };
-const ctx = { waitUntil: () => {} };
+// waitUntil 在本地要真的跑（线上是"响应后继续执行"，本地直接收藏起来，
+// 等统计完统一 await），否则 saveAll 不落盘，后面 healthz 一定报 kv_empty
+const pending = [];
+const ctx = { waitUntil: (pr) => { if (pr) pending.push(Promise.resolve(pr).catch(() => {})); } };
 
 // 把离线补全表也塞进内存 KV，否则本地跑出来的摘要/有效期跟线上不一致
 import { readFileSync, existsSync } from 'node:fs';
@@ -41,13 +44,14 @@ async function get(path) {
 }
 
 // ── 1. 政策库 ──────────────────────────────────────────────
-console.log('\n[1/4] /api/policies');
+console.log('\n[1/5] /api/policies');
 const t0 = Date.now();
 if (FULL) {
   const { json: r } = await get('/api/refresh');
   console.log(`  真实抓取耗时 ${((Date.now() - t0) / 1000).toFixed(1)}s · 写入 KV ${r.total} 条`);
 }
-const { json: p } = await get('/api/policies');
+// /api/policies 默认分页（40 条），冒烟要全量才统计得准
+const { json: p } = await get('/api/policies?all=1');
 ok(p.total > 300, `政策总数 ${p.total}（>300）`);
 ok(p.preferenceCount > 50, `优惠政策 ${p.preferenceCount} 条（>50）`);
 ok((p.errors || []).length === 0, '抓取无报错', JSON.stringify(p.errors || []));
@@ -67,6 +71,9 @@ ok(active > 40, `标注了有效期的 ${active} 条（>40）`);
 ok(p.items.filter((x) => x.status === '已到期').length <= 3, `已到期 ${p.items.filter((x) => x.status === '已到期').length} 条（≤3）`);
 
 // ── 健康检查端点 ──
+// 先把排队的 waitUntil（写 KV）跑完，否则健康检查永远看到空 KV
+await Promise.all(pending);
+
 const h = await get('/healthz');
 ok(h.status === 200 && h.json.ok === true, `/healthz 正常`, JSON.stringify(h.json.problems || []));
 
@@ -79,7 +86,7 @@ const TABLES = [
 const VALID_STATUS = ['长期有效', '继续有效', '待核实', '已停止', '已到期'];
 for (let i = 0; i < TABLES.length; i++) {
   const [path, name, min] = TABLES[i];
-  console.log(`\n[${i + 2}/4] ${path}`);
+  console.log(`\n[${i + 2}/5] ${path}`);
   const { status, json: j } = await get(path);
   ok(status === 200, `HTTP ${status}`);
   ok(j.total >= min, `${j.total} 条（≥${min}）`);
@@ -94,6 +101,35 @@ for (let i = 0; i < TABLES.length; i++) {
   const noLink = j.items.filter((x) => !x.url);
   console.log(`  可点 ${j.items.length - noLink.length} 条 / 无链接 ${noLink.length} 条${noLink.length ? '（' + noLink.map((x) => x.docNo).join('、') + '）' : ''}`);
 }
+
+// ── 5. 分页 / 身份打包 / 本季到期 / 跟踪清单 ─────────────────
+console.log('\n[5/5] 分页 · 身份包 · 本季到期 · 跟踪清单');
+
+const pg = await get('/api/policies?page=1&size=40');
+ok(pg.status === 200, `分页 HTTP ${pg.status}`);
+ok(pg.json.items.length === 40 && pg.json.size === 40, `默认每页 ${pg.json.items?.length} 条`);
+ok(pg.json.totalPages >= 2, `共 ${pg.json.totalPages} 页`);
+ok(!!(pg.json.facets && pg.json.facets.tax && pg.json.facets.tax.length), 'facets 有税种维度');
+ok(JSON.stringify(pg.json).length < 40000, `分页体积 ${JSON.stringify(pg.json).length} 字节（<40KB）`);
+
+const pg2 = await get('/api/policies?page=2&size=40');
+ok(pg2.json.page === 2 && pg2.json.items.length > 0, '第 2 页有数据');
+ok(pg2.json.items[0]?.id !== pg.json.items[0]?.id, '第 2 页与第 1 页不重复');
+
+const pf = await get('/api/policies?prefOnly=1&size=10');
+ok(pf.json.items.every((x) => x.isPreference), '只看优惠：返回的每条都是优惠');
+
+const pk = await get('/api/packs');
+ok(pk.status === 200 && pk.json.packs?.length === 4, `身份包 ${pk.json.packs?.length} 个`);
+ok(pk.json.packs.every((x) => x.count > 0 && x.items.length <= 30), '每个包都有内容且不超过 30 条');
+
+const ex = await get('/api/expiring');
+ok(ex.status === 200 && /^\d{4}-\d{2}-\d{2}$/.test(ex.json.start), `本季 ${ex.json.quarter} ${ex.json.start} ~ ${ex.json.end}`);
+ok(ex.json.items.every((x) => x.expiry >= ex.json.start && x.expiry <= ex.json.end), '到期日都落在本季度内');
+
+const wt = await get('/api/watch');
+ok(wt.status === 200 && wt.json.pending?.length === 4, `跟踪中 ${wt.json.pending?.length} 项`);
+ok(wt.json.pending.every((x) => x.expect && x.howToCheck), '每项都写了在等什么、怎么查');
 
 // 汇总
 console.log('\n' + '─'.repeat(48));

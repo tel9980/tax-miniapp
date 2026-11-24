@@ -1,6 +1,8 @@
 {
   "pages": [
     "pages/policies/index",
+    "pages/packs/index",
+    "pages/expiring/index",
     "pages/continuity/index",
     "pages/detail/detail"
   ],
@@ -18,6 +20,8 @@
     "borderStyle": "black",
     "list": [
       { "pagePath": "pages/policies/index", "text": "政策库" },
+      { "pagePath": "pages/packs/index", "text": "按身份" },
+      { "pagePath": "pages/expiring/index", "text": "本季到期" },
       { "pagePath": "pages/continuity/index", "text": "衔接表" }
     ]
   },

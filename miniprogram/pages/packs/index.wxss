@@ -1,0 +1,56 @@
+.page { padding: 20rpx 24rpx 60rpx; }
+
+.intro {
+  font-size: 26rpx; color: #6b7280; line-height: 1.6;
+  padding: 8rpx 8rpx 24rpx;
+}
+
+.empty { padding: 120rpx 0; text-align: center; color: #9aa0a6; font-size: 28rpx; }
+
+.pack {
+  background: #fff; border-radius: 16rpx; margin-bottom: 20rpx;
+  overflow: hidden;
+}
+
+.pack-head {
+  display: flex; align-items: center; padding: 28rpx 24rpx;
+}
+.pack-head:active { background: #f7f9ff; }
+
+.pack-icon { font-size: 40rpx; margin-right: 20rpx; }
+.pack-main { flex: 1; min-width: 0; }
+.pack-name { font-size: 30rpx; font-weight: 600; color: #1f2328; }
+.pack-count {
+  font-size: 22rpx; color: #2b6de8; background: #eef3ff;
+  padding: 2rpx 12rpx; border-radius: 20rpx; margin-left: 12rpx;
+}
+.pack-desc { font-size: 24rpx; color: #8a8f99; margin-top: 6rpx; line-height: 1.5; }
+.pack-fold { font-size: 24rpx; color: #2b6de8; margin-left: 16rpx; }
+
+.pack-body { border-top: 2rpx solid #f0f1f3; padding: 8rpx 0; }
+
+.pack-item { padding: 22rpx 24rpx; border-bottom: 2rpx solid #f7f8fa; }
+.pack-item:last-child { border-bottom: none; }
+.pack-item:active { background: #f7f9ff; }
+
+.pi-title { font-size: 28rpx; color: #1f2328; line-height: 1.5; }
+.pi-meta { margin-top: 10rpx; display: flex; flex-wrap: wrap; align-items: center; }
+.pi-doc { font-size: 22rpx; color: #6b7280; margin-right: 16rpx; }
+.pi-date { font-size: 22rpx; color: #9aa0a6; margin-right: 16rpx; }
+.pi-plain { font-size: 25rpx; color: #4b5563; line-height: 1.6; margin-top: 10rpx; }
+
+.tag {
+  font-size: 20rpx; padding: 2rpx 10rpx; border-radius: 6rpx;
+  margin-right: 8rpx;
+}
+.st-ok { color: #0f7b3f; background: #e8f7ee; }
+.st-soon { color: #a85600; background: #fff4e5; }
+.st-expired { color: #a8071a; background: #ffecec; }
+.st-warn { color: #a85600; background: #fff4e5; }
+.st-unknown { color: #6b7280; background: #f2f3f5; }
+
+.pack-tip {
+  padding: 20rpx 24rpx; font-size: 23rpx; color: #9aa0a6; text-align: center;
+}
+
+.foot { text-align: center; font-size: 22rpx; color: #b0b4bd; padding: 20rpx 0; }
