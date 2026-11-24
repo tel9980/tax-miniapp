@@ -149,6 +149,31 @@ const EFFECTIVE_UNTIL = [
   { match: ['公共租赁住房'], until: '2027-12-31' },
 ];
 
+// 按身份打包：把散落在 371 条里的身份相关政策按「谁来看」聚成四套。
+// 匹配范围 = 标题 + 文号 + 摘要（摘要来自 enrich 的正文提炼，比标题更准）。
+const IDENTITY_PACKS = [
+  {
+    id: 'sme', name: '小微企业', icon: '🏭',
+    desc: '小型微利企业、小规模纳税人最常用到的减免',
+    keywords: ['小微', '小规模', '初创', '创业', '六税两费', '减按1%', '起征点', '小型微利', '个体工商户减半'],
+  },
+  {
+    id: 'tech', name: '高新 / 研发', icon: '🔬',
+    desc: '高新技术企业、研发费用加计扣除等科技创新优惠',
+    keywords: ['研发', '加计扣除', '高新', '技术企业', '软件', '集成电路', '专利', '科技', '成果转化'],
+  },
+  {
+    id: 'self', name: '个体户', icon: '🏪',
+    desc: '个体工商户、个人独资、灵活就业人员相关优惠',
+    keywords: ['个体户', '个人独资', '灵活就业', '经营所得', '个体工商户'],
+  },
+  {
+    id: 'worker', name: '打工人', icon: '👤',
+    desc: '工资薪金、年终奖、专项附加扣除等个人所得税优惠',
+    keywords: ['年终奖', '一次性奖金', '专项附加', '个人养老金', '个税', '股权激励', '股息', '换购住房', '汇算', '个人所得税'],
+  },
+];
+
 // ===== 工具函数 =====
 function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), {
@@ -768,6 +793,108 @@ async function saveAll(env, data) {
   return data;
 }
 
+// ===== 按身份打包：从政策列表里按关键词聚出四套 =====
+// 匹配范围 = 标题 + 文号 + 摘要，命中任一关键词即纳入该包。
+function buildPacks(items) {
+  return IDENTITY_PACKS.map((pack) => {
+    const hits = items.filter((p) => {
+      const text = `${p.title} ${p.docNo || ''} ${p.plain || ''}`;
+      return pack.keywords.some((k) => text.includes(k));
+    });
+    return {
+      id: pack.id,
+      name: pack.name,
+      icon: pack.icon,
+      desc: pack.desc,
+      count: hits.length,
+      items: hits.slice(0, 30), // 每个包最多展示 30 条，避免过长
+    };
+  });
+}
+
+// ===== 本季度到期清单 =====
+// 取「当前季度」内到期的政策（到期日落在本季度 1 号 ~ 季末），按到期日升序。
+function quarterRange(now = new Date()) {
+  const q = Math.floor(now.getMonth() / 3); // 0=Q1..3=Q4
+  const start = new Date(now.getFullYear(), q * 3, 1);
+  const end = new Date(now.getFullYear(), q * 3 + 3, 0); // 季末
+  return {
+    start: start.toISOString().slice(0, 10),
+    end: end.toISOString().slice(0, 10),
+    label: `${now.getFullYear()} 年第 ${q + 1} 季度`,
+  };
+}
+
+function buildExpiring(items) {
+  const { start, end, label } = quarterRange();
+  const hits = items
+    .filter((p) => p.expiry && p.expiry >= start && p.expiry <= end)
+    .sort((a, b) => a.expiry.localeCompare(b.expiry));
+  return { quarter: label, start, end, count: hits.length, items: hits };
+}
+
+// ===== 服务端分页 + 筛选：/api/policies?page=1&size=40&tax=...&q=... =====
+// 首屏只传一页（约 20KB），后续「加载更多」翻页，避免一次性传输 371 条。
+// 同时返回 facets（各筛选维度的去重值 + 计数），前端用它建筛选 chips，无需加载全量。
+// 筛选在服务端做：前端只传筛选条件 + 页码，服务端返回过滤后的切片。
+function filterItems(items, params) {
+  const q = (params.get('q') || '').trim().toLowerCase();
+  const tax = params.get('tax') || '';
+  const type = params.get('type') || '';
+  const region = params.get('region') || '';
+  const area = params.get('area') || '';
+  const status = params.get('status') || '';
+  const prefOnly = params.get('prefOnly');
+  const newOnly = params.get('newOnly');
+  const favOnly = params.get('favOnly');
+  return items.filter((p) => {
+    if (prefOnly === '1' && !p.isPreference) return false;
+    if (newOnly === '1' && !p.isNew) return false;
+    if (favOnly === '1' && !(params.get('favs') || '').split(',').includes(p.id)) return false;
+    if (region && p.region !== region) return false;
+    if (area && p.area !== area) return false;
+    if (status && p.status !== status) return false;
+    if (tax && !(p.taxTypes || []).includes(tax)) return false;
+    if (type && p.prefType !== type) return false;
+    if (q && !`${p.title} ${p.docNo} ${p.plain || ''}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function buildFacets(items) {
+  const tax = new Map(), type = new Map(), region = new Map(), area = new Map(), status = new Map();
+  for (const p of items) {
+    (p.taxTypes || []).forEach((t) => tax.set(t, (tax.get(t) || 0) + 1));
+    if (p.prefType) type.set(p.prefType, (type.get(p.prefType) || 0) + 1);
+    if (p.region) region.set(p.region, (region.get(p.region) || 0) + 1);
+    if (p.area) area.set(p.area, (area.get(p.area) || 0) + 1);
+    if (p.status) status.set(p.status, (status.get(p.status) || 0) + 1);
+  }
+  return {
+    tax: [...tax.entries()].sort((a, b) => b[1] - a[1]).map(([k, v]) => ({ k, v })),
+    type: [...type.entries()].sort((a, b) => b[1] - a[1]).map(([k, v]) => ({ k, v })),
+    region: [...region.entries()].map(([k, v]) => ({ k, v })),
+    area: [...area.entries()].map(([k, v]) => ({ k, v })),
+    status: [...status.entries()].map(([k, v]) => ({ k, v })),
+  };
+}
+
+function paginate(items, page, size) {
+  const p = Math.max(1, Number(page) || 1);
+  const s = Math.min(100, Math.max(1, Number(size) || 40));
+  const total = items.length;
+  const start = (p - 1) * s;
+  return {
+    items: items.slice(start, start + s),
+    total,
+    prefCount: items.filter((x) => x.isPreference).length,
+    page: p,
+    size: s,
+    totalPages: Math.ceil(total / s),
+    facets: buildFacets(items),
+  };
+}
+
 // ===== Worker 入口 =====
 export default {
   // cron 定时任务：每天抓取最新政策 → 写 KV（配合 wrangler.toml [triggers]）
@@ -783,6 +910,15 @@ export default {
     // 政策列表 API：读 KV 秒出；过期但有旧数据 → 先返旧数据 + 后台刷新（stale-while-revalidate）；完全无缓存才现场抓取
     if (url.pathname === '/api/policies') {
       const cached = await readKV(env);
+      const data = cached && cached.items ? cached : await fetchAll(env);
+      // 服务端分页 + 筛选：带 ?page= 时只返一页（首屏 ~20KB），筛选条件在服务端做
+      const page = url.searchParams.get('page');
+      const size = url.searchParams.get('size');
+      if (page || size) {
+        const filtered = filterItems(data.items || [], url.searchParams);
+        const p = paginate(filtered, page, size);
+        return json({ ...data, ...p });
+      }
       if (isFresh(cached)) return json(cached);
       if (cached) {
         ctx.waitUntil((async () => {
@@ -790,9 +926,22 @@ export default {
         })());
         return json(cached);
       }
-      const data = await fetchAll(env);
       ctx.waitUntil(saveAll(env, data));
       return json(data);
+    }
+
+    // 按身份打包：小微 / 高新研发 / 个体户 / 打工人，各聚一套相关政策
+    if (url.pathname === '/api/packs') {
+      const cached = await readKV(env);
+      const data = cached && cached.items ? cached : await fetchAll(env);
+      return json({ packs: buildPacks(data.items || []), updatedAt: data.updatedAt });
+    }
+
+    // 本季度到期清单：到期日落在当前季度的政策，按到期日升序
+    if (url.pathname === '/api/expiring') {
+      const cached = await readKV(env);
+      const data = cached && cached.items ? cached : await fetchAll(env);
+      return json({ ...buildExpiring(data.items || []), updatedAt: data.updatedAt });
     }
 
     // 增值税新法衔接对照表（静态数据，无需抓取）

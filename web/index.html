@@ -240,6 +240,19 @@
   .item.nolink { cursor: default; }
   .item.nolink:hover { transform: none; }
   .nolink-hint { margin-top: 6px; font-size: 12px; color: #b45309; line-height: 1.5; }
+
+  /* 身份打包卡片 */
+  .pack-card { background: var(--card); border-radius: 14px; padding: 14px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+  .pack-head { display: flex; align-items: center; gap: 10px; }
+  .pack-icon { font-size: 26px; line-height: 1; }
+  .pack-title { font-size: 16px; font-weight: 700; flex: 1; display: flex; align-items: center; justify-content: space-between; }
+  .pack-count { font-size: 12px; font-weight: 400; color: var(--muted); background: var(--primary-light); color: var(--primary); padding: 2px 10px; border-radius: 10px; }
+  .pack-desc { font-size: 12.5px; color: var(--muted); margin: 6px 0 12px; line-height: 1.55; }
+  .pack-card .list { padding: 0; }
+  .pack-card .item { box-shadow: none; border: 1px solid var(--border); margin-bottom: 8px; }
+  .pack-card .item:last-child { margin-bottom: 0; }
+  .pack-card .item .title { font-size: 14px; -webkit-line-clamp: 2; }
+  .pack-card .item .summary { font-size: 12px; -webkit-line-clamp: 2; }
 </style>
 </head>
 <body>
@@ -256,6 +269,8 @@
 
   <div class="tabs">
     <div class="tab on" id="tabPolicy">政策库</div>
+    <div class="tab" id="tabPacks">身份打包</div>
+    <div class="tab" id="tabExpiring">本季到期</div>
     <div class="tab" id="tabVat">增值税衔接表</div>
     <div class="tab" id="tabCit">所得税到期地图</div>
     <div class="tab" id="tabIit">个税到期地图</div>
@@ -282,6 +297,17 @@
   <div class="stats" id="stats">正在加载…</div>
 
   <div class="list" id="list"></div>
+  </div>
+
+  <div id="packsView" style="display:none">
+    <div class="vat-key" id="packsKey" style="background:#eef2ff;border-color:#c7d2fe;color:#3730a3"></div>
+    <div class="stats" id="packsStats">正在加载…</div>
+    <div class="list" id="packsList"></div>
+  </div>
+
+  <div id="expiringView" style="display:none">
+    <div class="vat-key" id="expiringKey" style="background:#fef2f2;border-color:#fecaca;color:#991b1b"></div>
+    <div class="list" id="expiringList"></div>
   </div>
 
   <div id="vatView" style="display:none">

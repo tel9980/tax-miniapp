@@ -12,8 +12,13 @@ const FALLBACK = [
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-let policies = [];
-const PAGE_SIZE = 40;                 // 首屏/每批渲染条数，避免 300+ 条一次性渲染卡顿
+let policies = [];           // 当前已加载的政策（服务端分页的一页或多页）
+let facets = null;           // 服务端返回的筛选维度（tax/type/region/area/status 各去重值+计数）
+let currentPage = 1;         // 当前页码
+let totalPages = 1;          // 总页数
+let serverTotal = 0;         // 服务端筛选后的总条数
+let serverPref = 0;          // 服务端筛选后的优惠条数
+const PAGE_SIZE = 40;                 // 每页渲染条数，避免一次传输/渲染 300+ 条
 const FILTER_KEYS = ['tax', 'type', 'region', 'area', 'status', 'prefOnly', 'newOnly', 'favOnly'];
 const FAV_KEY = 'tax-favs';
 let favs = new Set();
@@ -31,24 +36,45 @@ function saveFilter() {
   try { const o = {}; FILTER_KEYS.forEach((k) => (o[k] = state[k])); localStorage.setItem('tax-filter', JSON.stringify(o)); } catch (e) {}
 }
 
-// ===== 加载 =====
-async function load() {
-  $('list').innerHTML = '<div class="loading"><div class="spinner"></div>正在同步最新政策…</div>';
+// 把筛选条件拼成 URL 查询串（服务端筛选 + 分页）
+function buildQuery(page) {
+  const p = new URLSearchParams();
+  p.set('page', page);
+  p.set('size', PAGE_SIZE);
+  if (state.q.trim()) p.set('q', state.q.trim());
+  if (state.tax !== '全部') p.set('tax', state.tax);
+  if (state.type !== '全部') p.set('type', state.type);
+  if (state.region !== '全部') p.set('region', state.region);
+  if (state.area !== '全部') p.set('area', state.area);
+  if (state.status !== '全部') p.set('status', state.status);
+  if (state.prefOnly) p.set('prefOnly', '1');
+  if (state.newOnly) p.set('newOnly', '1');
+  if (state.favOnly) { p.set('favOnly', '1'); p.set('favs', [...favs].join(',')); }
+  return p.toString();
+}
+
+// ===== 加载（服务端分页）=====
+async function loadPage(page = 1, append = false) {
+  if (!append) $('list').innerHTML = '<div class="loading"><div class="spinner"></div>正在同步最新政策…</div>';
   try {
-    const r = await fetch('/api/policies', { headers: { Accept: 'application/json' } });
+    const r = await fetch('/api/policies?' + buildQuery(page), { headers: { Accept: 'application/json' } });
     const d = await r.json();
-    policies = (d && Array.isArray(d.items) && d.items.length) ? d.items : FALLBACK;
+    const items = (d && Array.isArray(d.items)) ? d.items : [];
+    policies = append ? policies.concat(items) : items;
+    facets = d.facets || null;
+    currentPage = d.page || page;
+    totalPages = d.totalPages || 1;
+    serverTotal = d.total || 0;
+    serverPref = d.prefCount || 0;
     updateBadge(d);
   } catch (e) {
     policies = FALLBACK;
+    facets = null;
+    currentPage = 1; totalPages = 1;
+    serverTotal = FALLBACK.length; serverPref = FALLBACK.length;
     updateBadge({ source: '内置兜底', total: FALLBACK.length, preferenceCount: FALLBACK.length, updatedAt: null });
   }
-  buildRegionChips();
-  buildAreaChips();
-  buildStatusChips();
-  buildTypeChips();
-  buildTaxChips();
-  buildNewChip();
+  buildChips();
   bindFavClicks();
   $('prefToggle').classList.toggle('on', state.prefOnly);
   render();
@@ -60,7 +86,7 @@ function updateBadge(d) {
   if (d && d.updatedAt) {
     try { t = new Date(d.updatedAt).toLocaleString('zh-CN', { hour12: false }); } catch (e) {}
   }
-  $('badge').textContent = `已同步 ${d?.total ?? policies.length} 条 · 优惠 ${d?.preferenceCount ?? '?'} 条 · ${src} · ${t}`;
+  $('badge').textContent = `已同步 ${d?.total ?? serverTotal} 条 · 优惠 ${d?.prefCount ?? d?.preferenceCount ?? '?'} 条 · ${src} · ${t}`;
 }
 
 // 快捷筛选 chips：「新增政策」（cron 每日 diff）+ 「我的收藏」（本地存储）
@@ -75,7 +101,7 @@ function buildNewChip() {
   c.addEventListener('click', () => {
     state.newOnly = !state.newOnly;
     c.classList.toggle('active', state.newOnly);
-    render();
+    loadPage(1);
   });
   holder.appendChild(c);
 
@@ -85,7 +111,7 @@ function buildNewChip() {
   f.addEventListener('click', () => {
     state.favOnly = !state.favOnly;
     f.classList.toggle('active', state.favOnly);
-    render();
+    loadPage(1);
   });
   holder.appendChild(f);
 }
@@ -104,14 +130,27 @@ function bindFavClicks() {
     if (favs.has(id)) favs.delete(id); else favs.add(id);
     saveFavs();
     buildNewChip();          // 刷新收藏计数
-    render(false);           // 保持已加载条数，不跳回顶部
+    // 若正以「我的收藏」筛选，需重新请求服务端；否则只更新星标
+    if (state.favOnly) loadPage(1); else render();
   });
 }
 
-// ===== 筛选 chips 构建 =====
+// ===== 筛选 chips 构建（数据源：服务端 facets，非当前页 policies）=====
+function buildChips() {
+  buildRegionChips();
+  buildAreaChips();
+  buildStatusChips();
+  buildTypeChips();
+  buildTaxChips();
+  buildNewChip();
+}
+
+function facetKeys(facet) {
+  return facet && Array.isArray(facet) ? facet.map((x) => x.k) : [];
+}
+
 function buildRegionChips() {
-  const regions = new Set();
-  policies.forEach((p) => { if (p.region) regions.add(p.region); });
+  const regions = facetKeys(facets && facets.region);
   const holder = $('regionFilters');
   holder.innerHTML = '';
   ['全部', ...regions].forEach((r) => {
@@ -121,17 +160,16 @@ function buildRegionChips() {
     c.addEventListener('click', () => {
       state.region = r;
       holder.querySelectorAll('.chip').forEach((x) => x.classList.toggle('active', x.textContent === r));
-      render();
+      loadPage(1);
     });
     holder.appendChild(c);
   });
 }
 
 function buildAreaChips() {
-  const areas = new Set();
-  policies.forEach((p) => { if (p.area) areas.add(p.area); });
+  const areas = facetKeys(facets && facets.area);
   const holder = $('areaFilters');
-  if (!areas.size) { holder.style.display = 'none'; return; }
+  if (!areas.length) { holder.style.display = 'none'; return; }
   holder.style.display = 'flex';
   holder.innerHTML = '';
   ['全部', ...areas].forEach((a) => {
@@ -141,7 +179,7 @@ function buildAreaChips() {
     c.addEventListener('click', () => {
       state.area = a;
       holder.querySelectorAll('.chip').forEach((x) => x.classList.toggle('active', x.textContent === a));
-      render();
+      loadPage(1);
     });
     holder.appendChild(c);
   });
@@ -158,17 +196,15 @@ function buildStatusChips() {
     c.addEventListener('click', () => {
       state.status = s;
       holder.querySelectorAll('.chip').forEach((x) => x.classList.toggle('active', x.textContent === s));
-      render();
+      loadPage(1);
     });
     holder.appendChild(c);
   });
 }
 
 function buildTypeChips() {
-  const types = new Set();
-  policies.forEach((p) => { if (p.isPreference && p.prefType) types.add(p.prefType); });
+  const types = facetKeys(facets && facets.type);
   const holder = $('prefFilters');
-  // 保留「只看优惠」开关，清除其余，重建类型 chips
   const toggle = $('prefToggle');
   holder.innerHTML = '';
   holder.appendChild(toggle);
@@ -179,15 +215,14 @@ function buildTypeChips() {
     c.addEventListener('click', () => {
       state.type = t;
       holder.querySelectorAll('.chip').forEach((x) => x.classList.toggle('active', x.textContent === t));
-      render();
+      loadPage(1);
     });
     holder.appendChild(c);
   });
 }
 
 function buildTaxChips() {
-  const taxes = new Set();
-  policies.forEach((p) => (p.taxTypes || []).forEach((t) => taxes.add(t)));
+  const taxes = facetKeys(facets && facets.tax);
   const holder = $('taxFilters');
   holder.innerHTML = '';
   ['全部', ...taxes].forEach((t) => {
@@ -197,42 +232,27 @@ function buildTaxChips() {
     c.addEventListener('click', () => {
       state.tax = t;
       holder.querySelectorAll('.chip').forEach((x) => x.classList.toggle('active', x.textContent === t));
-      render();
+      loadPage(1);
     });
     holder.appendChild(c);
   });
 }
 
-// ===== 渲染 =====
-function render(resetShown = true) {
-  if (resetShown) { state.shown = PAGE_SIZE; saveFilter(); }
-  const q = state.q.trim().toLowerCase();
-  const filtered = policies.filter((p) => {
-    if (state.prefOnly && !p.isPreference) return false;
-    if (state.newOnly && !p.isNew) return false;
-    if (state.favOnly && !favs.has(p.id)) return false;
-    if (state.region !== '全部' && p.region !== state.region) return false;
-    if (state.area !== '全部' && p.area !== state.area) return false;
-    if (state.status !== '全部' && p.status !== state.status) return false;
-    if (state.tax !== '全部' && !(p.taxTypes || []).includes(state.tax)) return false;
-    if (state.type !== '全部' && p.prefType !== state.type) return false;
-    if (q && !`${p.title} ${p.docNo} ${p.plain || ''}`.toLowerCase().includes(q)) return false;
-    return true;
-  });
-
-  const prefCount = filtered.filter((p) => p.isPreference).length;
+// ===== 渲染（服务端已筛选+分页，前端只渲染已加载的页）=====
+function render() {
+  saveFilter();
+  const prefCount = serverPref;
   const newFresh = policies.filter((p) => p.isNew).length;
   const newPill = newFresh ? ` · <span class="new-pill">🆕 新增 ${newFresh} 条</span>` : '';
-  $('stats').innerHTML = `共 <b>${filtered.length}</b> 条${state.prefOnly ? '（仅优惠）' : ''} · 其中优惠 <b>${prefCount}</b> 条${newPill}`;
+  $('stats').innerHTML = `共 <b>${serverTotal}</b> 条${state.prefOnly ? '（仅优惠）' : ''} · 其中优惠 <b>${prefCount}</b> 条${newPill}`;
 
-  if (!filtered.length) {
+  if (!policies.length) {
     $('list').innerHTML = '<div class="empty"><div class="emoji">🔍</div>没有匹配的政策，换个关键词或筛选条件试试</div>';
     return;
   }
 
-  const visible = filtered.slice(0, state.shown);
-  const rest = filtered.length - visible.length;
-  $('list').innerHTML = visible.map((p) => {
+  const rest = serverTotal - policies.length;
+  $('list').innerHTML = policies.map((p) => {
     const taxTags = (p.taxTypes || []).slice(0, 3).map((t) => `<span class="tag">${esc(t)}</span>`).join('');
     const prefTag = p.isPreference && p.prefType ? `<span class="tag pref">${esc(p.prefType)}</span>` : '';
     const regionTag = p.region ? `<span class="tag region">${esc(p.region)}</span>` : '';
@@ -268,7 +288,7 @@ function render(resetShown = true) {
     : '');
 
   const btn = $('loadMoreBtn');
-  if (btn) btn.addEventListener('click', () => { state.shown += PAGE_SIZE; render(false); });
+  if (btn) btn.addEventListener('click', () => loadPage(currentPage + 1, true));
 }
 
 // ===== 回到顶部 =====
@@ -283,21 +303,96 @@ function render(resetShown = true) {
 $('prefToggle').addEventListener('click', function () {
   state.prefOnly = !state.prefOnly;
   this.classList.toggle('on', state.prefOnly);
-  render();
+  loadPage(1);
 });
 
 let debounceTimer;
 $('searchInput').addEventListener('input', (e) => {
   clearTimeout(debounceTimer);
   $('clearBtn').style.display = e.target.value ? 'block' : 'none';
-  debounceTimer = setTimeout(() => { state.q = e.target.value; render(); }, 250);
+  debounceTimer = setTimeout(() => { state.q = e.target.value; loadPage(1); }, 300);
 });
 $('clearBtn').addEventListener('click', () => {
   $('searchInput').value = '';
   $('clearBtn').style.display = 'none';
   state.q = '';
-  render();
+  loadPage(1);
 });
+
+// ===== 按身份打包 =====
+async function loadPacks() {
+  $('packsList').innerHTML = '<div class="loading"><div class="spinner"></div>正在聚类…</div>';
+  try {
+    const r = await fetch('/api/packs', { headers: { Accept: 'application/json' } });
+    const d = await r.json();
+    renderPacks(d.packs || [], d.updatedAt);
+  } catch (e) {
+    $('packsList').innerHTML = '<div class="loading">加载失败，请刷新重试</div>';
+  }
+}
+
+function renderPacks(packs, updatedAt) {
+  const holder = $('packsList');
+  if (!packs.length) { holder.innerHTML = '<div class="empty"><div class="emoji">📦</div>暂无打包数据</div>'; return; }
+  holder.innerHTML = packs.map((pack) => {
+    const items = pack.items.map((p) => {
+      const taxTags = (p.taxTypes || []).slice(0, 2).map((t) => `<span class="tag">${esc(t)}</span>`).join('');
+      const prefTag = p.isPreference && p.prefType ? `<span class="tag pref">${esc(p.prefType)}</span>` : '';
+      const statusTag = p.status && p.status !== '未标注' ? `<span class="tag status">${esc(p.status)}${p.expiry ? ' ' + esc(p.expiry) : ''}</span>` : '';
+      const summary = p.plain ? `<div class="summary">${esc(p.plain)}</div>` : '';
+      const docDate = [p.docNo, p.date].filter(Boolean).join(' · ');
+      const body = `
+        <div class="title">${esc(p.title)}</div>
+        ${summary}
+        <div class="meta">${statusTag}${prefTag}${taxTags}</div>
+        <div class="sub"><span>${esc(docDate)}</span></div>`;
+      if (!p.url) return `<div class="item nolink">${body}<div class="nolink-hint">官方库未收录原文 · 请按文号「${esc(p.docNo || '')}」自行核实，或拨 12366 确认</div></div>`;
+      return `<a class="item" href="${esc(p.url)}" target="_blank" rel="noopener">${body}</a>`;
+    }).join('');
+    return `
+      <div class="pack-card">
+        <div class="pack-head">
+          <span class="pack-icon">${pack.icon}</span>
+          <div class="pack-title">${esc(pack.name)}<span class="pack-count">${pack.count} 条</span></div>
+        </div>
+        <div class="pack-desc">${esc(pack.desc)}</div>
+        <div class="list">${items}</div>
+      </div>`;
+  }).join('');
+  $('packsKey').innerHTML = `按<strong>身份/场景</strong>聚合相关优惠政策，帮您快速定位与自己最相关的条款。共 <b>${packs.length}</b> 个身份包 · ${packs.reduce((s, p) => s + p.count, 0)} 条相关政策${updatedAt ? ' · 更新于 ' + new Date(updatedAt).toLocaleString('zh-CN', { hour12: false }) : ''}`;
+}
+
+// ===== 本季度到期清单 =====
+async function loadExpiring() {
+  $('expiringList').innerHTML = '<div class="loading"><div class="spinner"></div>正在统计…</div>';
+  try {
+    const r = await fetch('/api/expiring', { headers: { Accept: 'application/json' } });
+    const d = await r.json();
+    renderExpiring(d);
+  } catch (e) {
+    $('expiringList').innerHTML = '<div class="loading">加载失败，请刷新重试</div>';
+  }
+}
+
+function renderExpiring(d) {
+  const holder = $('expiringList');
+  $('expiringKey').innerHTML = `<strong>${esc(d.quarter)}到期清单</strong> · 本季度（${esc(d.start)} ~ ${esc(d.end)}）内到期的政策，按到期日升序排列，共 <b>${d.count}</b> 条，请提前关注续期或替代政策。`;
+  if (!d.count) { holder.innerHTML = '<div class="empty"><div class="emoji">✅</div>本季度暂无到期政策，安心使用</div>'; return; }
+  holder.innerHTML = d.items.map((p) => {
+    const taxTags = (p.taxTypes || []).slice(0, 2).map((t) => `<span class="tag">${esc(t)}</span>`).join('');
+    const prefTag = p.isPreference && p.prefType ? `<span class="tag pref">${esc(p.prefType)}</span>` : '';
+    const regionTag = p.region ? `<span class="tag region">${esc(p.region)}</span>` : '';
+    const summary = p.plain ? `<div class="summary">${esc(p.plain)}</div>` : '';
+    const docDate = [p.docNo, p.date].filter(Boolean).join(' · ');
+    const body = `
+        <div class="title"><span class="tag status st-soon">${esc(p.expiry)} 到期</span>${esc(p.title)}</div>
+        ${summary}
+        <div class="meta">${regionTag}${prefTag}${taxTags}</div>
+        <div class="sub"><span>${esc(docDate)}</span></div>`;
+    if (!p.url) return `<div class="item nolink">${body}<div class="nolink-hint">官方库未收录原文 · 请按文号「${esc(p.docNo || '')}」自行核实，或拨 12366 确认</div></div>`;
+    return `<a class="item" href="${esc(p.url)}" target="_blank" rel="noopener">${body}</a>`;
+  }).join('');
+}
 
 // ===== 增值税新法衔接对照表 =====
 // ===== 优惠衔接表通用渲染器（增值税 / 企业所得税共用）=====
@@ -414,6 +509,8 @@ const iitTab = makeContinuity({
 // ===== Tab 切换 =====
 const TABS = [
   { tab: 'tabPolicy', view: 'policyView' },
+  { tab: 'tabPacks', view: 'packsView', load: () => loadPacks() },
+  { tab: 'tabExpiring', view: 'expiringView', load: () => loadExpiring() },
   { tab: 'tabVat', view: 'vatView', load: () => vatTab.load() },
   { tab: 'tabCit', view: 'citView', load: () => citTab.load() },
   { tab: 'tabIit', view: 'iitView', load: () => iitTab.load() },
@@ -430,7 +527,7 @@ TABS.forEach((t) => {
 });
 
 // 启动
-load();
+loadPage(1);
 
 // 注册 Service Worker（可「添加到主屏幕」+ 离线可开）
 if ('serviceWorker' in navigator) {
