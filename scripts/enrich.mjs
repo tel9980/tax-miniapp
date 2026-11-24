@@ -39,12 +39,18 @@ function pickDocNo(html, paragraphs) {
   // ① 部门公告式：财政部 税务总局 工业和信息化部公告2023年第10号
   let m = headText.match(/[\u4e00-\u9fa5、]{2,30}(?:\s+[\u4e00-\u9fa5、]{2,30}){0,4}公告\s*(\d{4})\s*年\s*第\s*(\d+)\s*号/);
   if (m) return trimDocPrefix(m[0]);
-  // ② 文号式：财税〔2022〕19号 / 税务总局公告2023年第14号 / 粤财税〔2026〕1号
+  // ② 括号式公告：广东省第十三届人民代表大会常务委员会公告（第41号）/ 公告(第5号)
+  m = headText.match(/[\u4e00-\u9fa5、]{2,40}(?:\s+[\u4e00-\u9fa5、]{2,40}){0,3}公告\s*[（(]\s*第\s*(\d+)\s*号\s*[）)]/);
+  if (m) return m[0].replace(/\s+/g, '');
+  // ③ 文号式：财税〔2022〕19号 / 税务总局公告2023年第14号 / 粤财税〔2026〕1号 / 国发〔2023〕7号
   m = headText.match(/[\u4e00-\u9fa5]{2,10}\s*[〔\[]\s*(\d{4})\s*[〕\]]\s*(\d+)\s*号/);
   if (m) return m[0].replace(/\s+/g, '');
-  // ③ 兜底：正文前几段里找（有些页面把文号放在正文开头）
+  // ④ 兜底：正文前几段里找（有些页面把文号放在正文开头）
   const bodyHead = paragraphs.slice(0, 4).join(' ');
   m = bodyHead.match(/[\u4e00-\u9fa5]{2,10}\s*[〔\[]\s*(\d{4})\s*[〕\]]\s*(\d+)\s*号/);
+  if (m) return m[0].replace(/\s+/g, '');
+  // ⑤ 兜底②：正文前几段里的括号式公告
+  m = bodyHead.match(/[\u4e00-\u9fa5、]{2,40}公告\s*[（(]\s*第\s*(\d+)\s*号\s*[）)]/);
   if (m) return m[0].replace(/\s+/g, '');
   return '';
 }
